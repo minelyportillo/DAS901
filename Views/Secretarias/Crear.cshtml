@@ -1,0 +1,61 @@
+@model ClinicaApp.ViewModels.CreateSecretaryViewModel
+
+@{
+    ViewData["Title"] = "Agregar secretaria";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">ADMINISTRACIÓN</p>
+        <h1>Agregar secretaria</h1>
+        <p class="page-subtitle">Crea una cuenta para el personal de secretaría.</p>
+    </div>
+    <a class="btn btn-light-blue" asp-action="Index">&larr; Volver a cuentas</a>
+</div>
+
+<div class="form-layout">
+    <section class="form-intro-card">
+        <span class="form-intro-icon" aria-hidden="true">+</span>
+        <h2>Nueva cuenta</h2>
+        <p>La secretaria podrá iniciar sesión para utilizar las funciones asignadas a su rol.</p>
+        <div class="form-note">
+            <span aria-hidden="true">i</span>
+            <p>Asigna una contraseña temporal segura de al menos 8 caracteres y compártela de forma privada.</p>
+        </div>
+    </section>
+
+    <form asp-action="Crear" method="post" class="form-card">
+        <div class="form-card-header">
+            <div>
+                <h2>Datos de acceso</h2>
+                <p>Nombre, correo y contraseña temporal</p>
+            </div>
+        </div>
+        <div class="form-card-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" autocomplete="name" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-card-footer">
+            <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+            <button class="btn btn-primary" type="submit">Crear cuenta</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

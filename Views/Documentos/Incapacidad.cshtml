@@ -1,0 +1,23 @@
+@model ClinicaApp.ViewModels.IncapacityViewModel
+
+@{
+    ViewData["Title"] = "Incapacidad";
+}
+
+<div class="page-heading">
+    <div><p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p><h1>Emitir incapacidad</h1><p class="page-subtitle">Registra los días de reposo y su justificación clínica.</p></div>
+    <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">&larr; Volver a consulta</a>
+</div>
+
+<form asp-action="Incapacidad" method="post" class="form-card document-form">
+    <input asp-for="ConsultationId" type="hidden" />
+    <div class="form-card-header"><div><h2>Datos de incapacidad</h2><p>La incapacidad se asociará a la consulta actual.</p></div></div>
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="mb-3"><label asp-for="Days" class="form-label"></label><input asp-for="Days" class="form-control" type="number" min="1" max="365" /><span asp-validation-for="Days" class="text-danger"></span></div>
+        <div><label asp-for="Justification" class="form-label"></label><textarea asp-for="Justification" class="form-control" rows="4"></textarea><span asp-validation-for="Justification" class="text-danger"></span></div>
+    </div>
+    <div class="form-card-footer"><a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a><button class="btn btn-primary" type="submit">Guardar incapacidad</button></div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,97 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+    var isDoctor = User.IsInRole("Doctora");
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">SISTEMA DE GESTIÓN CLÍNICA</p>
+        <h1>Bienvenido a Clínica</h1>
+        <p class="page-subtitle">Hola, @User.Identity?.Name. @(isDoctor ? "Revisa la sala de espera y brinda atención clínica." : "Busca pacientes y organiza la recepción.")</p>
+    </div>
+</div>
+
+<section class="welcome-panel">
+    <div class="welcome-copy">
+        <span class="welcome-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2M12 6v4M10 8h4" /></svg>
+        </span>
+        <div>
+            <p class="card-eyebrow">GESTIÓN DE PACIENTES</p>
+            <h2>Comienza un nuevo expediente</h2>
+            <p>@(isDoctor ? "Consulta la fila de atención, revisa expedientes y documenta la consulta médica." : "Busca expedientes existentes o registra los datos de un paciente nuevo.")</p>
+        </div>
+    </div>
+    @if (isDoctor)
+    {
+        <a class="btn btn-primary" asp-controller="SalaEspera" asp-action="Index">
+            Ver sala de espera
+        </a>
+    }
+    else
+    {
+        <a class="btn btn-primary" asp-controller="Pacientes" asp-action="Registrar">
+            <span aria-hidden="true">+</span> Agregar paciente
+        </a>
+    }
+</section>
+
+<div class="section-heading">
+    <div>
+        <h2>Accesos rápidos</h2>
+        <p>Elige una acción para continuar.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        @if (isDoctor)
+        {
+            <a class="action-card" asp-controller="SalaEspera" asp-action="Index">
+                <span class="action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6" /><circle cx="19" cy="7" r="1" /></svg>
+                </span>
+                <span class="action-copy">
+                    <strong>Sala de espera</strong>
+                    <small>Atiende en orden a los pacientes y revisa su prioridad.</small>
+                </span>
+                <span class="action-arrow" aria-hidden="true">&rarr;</span>
+            </a>
+        }
+        else
+        {
+            <a class="action-card" asp-controller="Pacientes" asp-action="Registrar">
+            <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6" /></svg>
+            </span>
+            <span class="action-copy">
+                <strong>Registrar paciente</strong>
+                <small>Crear un expediente con sus datos personales y de contacto.</small>
+            </span>
+            <span class="action-arrow" aria-hidden="true">&rarr;</span>
+            </a>
+            }
+    </div>
+    <div class="col-md-6">
+        <a class="action-card" asp-controller="Pacientes" asp-action="Buscar">
+            <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+            </span>
+            <span class="action-copy">
+                <strong>Buscar pacientes</strong>
+                <small>Abre expedientes e historial de consultas.</small>
+            </span>
+            <span class="action-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+    </div>
+    @if (isDoctor)
+    {
+        <div class="col-md-6">
+            <a class="action-card" asp-controller="Secretarias" asp-action="Index">
+                <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6" /></svg></span>
+                <span class="action-copy"><strong>Administrar secretarias</strong><small>Crear y eliminar cuentas del personal.</small></span>
+                <span class="action-arrow" aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    }
+</div>

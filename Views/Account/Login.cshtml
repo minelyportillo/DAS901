@@ -1,0 +1,42 @@
+@model ClinicaApp.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<div class="login-page">
+    <section class="login-card">
+        <div class="login-brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 21s-8-4.7-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.3-8 11-8 11Z" /><path d="M5.5 12h4l1.5-3 2.2 6 1.5-3h3.8" /></svg>
+            </span>
+            <span><strong>Clínica</strong><small>Sistema de Gestión Clínica</small></span>
+        </div>
+
+        <h1>Bienvenida</h1>
+        <p class="login-subtitle">Ingresa con tu cuenta para continuar.</p>
+
+        <form asp-controller="Account" asp-action="Login" method="post">
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="username" placeholder="nombre@udb.com" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Tu contraseña" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit">Iniciar sesión</button>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

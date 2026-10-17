@@ -1,0 +1,45 @@
+@model IReadOnlyList<ClinicaApp.Services.ClinicUserSummary>
+
+@{
+    ViewData["Title"] = "Cuentas de secretaría";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">ADMINISTRACIÓN</p>
+        <h1>Cuentas de secretaría</h1>
+        <p class="page-subtitle">Crea y administra el acceso del personal de secretaría.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Crear">+ Agregar secretaria</a>
+</div>
+
+<section class="users-card">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <h2>No hay cuentas de secretaría</h2>
+            <p>Crea una cuenta para que el personal pueda acceder al sistema.</p>
+            <a class="btn btn-primary" asp-action="Crear">Agregar secretaria</a>
+        </div>
+    }
+    else
+    {
+        <div class="users-list">
+            @foreach (var secretary in Model)
+            {
+                <article class="user-row">
+                    <span class="user-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(secretary.Name) ? "S" : secretary.Name[..1].ToUpperInvariant())</span>
+                    <div class="user-details">
+                        <strong>@secretary.Name</strong>
+                        <span>@secretary.Email</span>
+                    </div>
+                    <span class="role-pill">Secretaria</span>
+                    <form asp-action="Eliminar" method="post" onsubmit="return confirm('¿Eliminar la cuenta de @secretary.Name?');">
+                        <input type="hidden" name="id" value="@secretary.Id" />
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>

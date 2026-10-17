@@ -1,0 +1,121 @@
+@model ClinicaApp.Services.PatientChartData
+
+@{
+    ViewData["Title"] = "Expediente del paciente";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">EXPEDIENTE CLÍNICO</p>
+        <h1>Expediente del paciente</h1>
+        <p class="page-subtitle">Información registrada y atenciones asociadas.</p>
+    </div>
+    <a class="btn btn-light-blue" asp-action="Buscar">&larr; Volver a pacientes</a>
+</div>
+
+<section class="patient-summary-card">
+    <span class="patient-large-avatar" aria-hidden="true">@Model.Patient.Name[..1].ToUpperInvariant()</span>
+    <div class="patient-summary-name">
+        <h2>@Model.Patient.Name</h2>
+        <p>Registrado el @Model.Patient.RegisteredAt.ToString("dd/MM/yyyy")</p>
+        <span class="role-pill">@Model.Patient.Age años</span>
+    </div>
+    <dl class="patient-facts">
+        <div><dt>Teléfono</dt><dd>@Model.Patient.Phone</dd></div>
+        <div><dt>Fecha de nacimiento</dt><dd>@Model.Patient.DateOfBirth.ToString("dd/MM/yyyy")</dd></div>
+    </dl>
+</section>
+
+<div class="row g-3 my-1">
+    <div class="col-md-6">
+        <section class="info-card h-100">
+            <p class="card-eyebrow">ALERGIAS</p>
+            <p class="info-card-value">@(string.IsNullOrWhiteSpace(Model.Allergies) ? "No registradas" : Model.Allergies)</p>
+        </section>
+    </div>
+    <div class="col-md-6">
+        <section class="info-card h-100">
+            <p class="card-eyebrow">ANTECEDENTES MÉDICOS</p>
+            @if (Model.Antecedents.Count == 0)
+            {
+                <p class="info-card-value">No registrados</p>
+            }
+            else
+            {
+                @foreach (var antecedent in Model.Antecedents)
+                {
+                    <span class="history-tag">@antecedent.Category: @antecedent.Description</span>
+                }
+            }
+            @if (User.IsInRole("Doctora"))
+            {
+                <form asp-action="AgregarAntecedente" method="post" class="antecedent-form mt-3">
+                    <input type="hidden" name="PatientId" value="@Model.Patient.Id" />
+                    <label class="visually-hidden" for="antecedentCategory">Categoría</label>
+                    <input id="antecedentCategory" name="Category" class="form-control form-control-sm" maxlength="50" placeholder="Categoría, ej. Enfermedad" required />
+                    <label class="visually-hidden" for="antecedentDescription">Descripción</label>
+                    <input id="antecedentDescription" name="Description" class="form-control form-control-sm" maxlength="150" placeholder="Nuevo antecedente médico" required />
+                    <button class="btn btn-light-blue btn-sm" type="submit">Agregar antecedente</button>
+                </form>
+            }
+        </section>
+    </div>
+</div>
+
+@if (User.IsInRole("Doctora"))
+{
+<div class="section-heading mt-4">
+    <div>
+        <h2>Historial de consultas</h2>
+        <p>@Model.Consultations.Count atención(es) registrada(s)</p>
+    </div>
+</div>
+
+<section class="users-card">
+    @if (Model.Consultations.Count == 0)
+    {
+        <div class="empty-state">
+            <h2>Aún no hay consultas</h2>
+            <p>Las atenciones aparecerán aquí cuando se registren.</p>
+        </div>
+    }
+    else
+    {
+        <div class="users-list">
+            @foreach (var consultation in Model.Consultations)
+            {
+                <article class="history-row">
+                    <span class="history-date">@consultation.ArrivalTime.ToString("dd")<small>@consultation.ArrivalTime.ToString("MMM").ToUpperInvariant()</small></span>
+                    <div class="user-details">
+                        <strong>@(string.IsNullOrWhiteSpace(consultation.Diagnosis) ? "Consulta sin cerrar" : consultation.Diagnosis)</strong>
+                        <span>@(string.IsNullOrWhiteSpace(consultation.Reason) ? "Sin motivo registrado" : consultation.Reason) · @consultation.State</span>
+                    </div>
+                    @if (User.IsInRole("Doctora"))
+                    {
+                        @if (consultation.State == EstadoConsulta.Cerrada)
+                        {
+                            <a class="btn btn-light-blue btn-sm"
+                               asp-controller="Consultas" asp-action="Detalle" asp-route-id="@consultation.Id">Ver consulta</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-primary btn-sm"
+                               asp-controller="Consultas" asp-action="Atender" asp-route-id="@consultation.Id">Continuar consulta</a>
+                        }
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>
+}
+
+@if (User.IsInRole("Secretaria"))
+{
+    <div class="d-flex justify-content-end mt-3">
+        <form asp-controller="SalaEspera" asp-action="RegistrarLlegada" method="post">
+            <input type="hidden" name="pacienteId" value="@Model.Patient.Id" />
+            <button class="btn btn-primary" type="submit">Registrar llegada de hoy</button>
+        </form>
+    </div>
+}

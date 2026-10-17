@@ -1,0 +1,27 @@
+@model ClinicaApp.ViewModels.PrescriptionViewModel
+
+@{
+    ViewData["Title"] = "Agregar medicamento";
+}
+
+<div class="page-heading">
+    <div><p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p><h1>Agregar medicamento</h1><p class="page-subtitle">Los datos se agregarán a la receta de esta consulta.</p></div>
+    <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">&larr; Volver a consulta</a>
+</div>
+
+<form asp-action="Receta" method="post" class="form-card document-form">
+    <input asp-for="ConsultationId" type="hidden" />
+    <div class="form-card-header"><div><h2>Indicaciones del medicamento</h2><p>Completa todos los campos para la receta.</p></div></div>
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="row g-3">
+            <div class="col-md-6"><label asp-for="Medication" class="form-label"></label><input asp-for="Medication" class="form-control" /><span asp-validation-for="Medication" class="text-danger"></span></div>
+            <div class="col-md-6"><label asp-for="Concentration" class="form-label"></label><input asp-for="Concentration" class="form-control" placeholder="Ej. 500 mg" /><span asp-validation-for="Concentration" class="text-danger"></span></div>
+            <div class="col-md-6"><label asp-for="Dose" class="form-label"></label><input asp-for="Dose" class="form-control" placeholder="Ej. 1 tableta cada 8 horas" /><span asp-validation-for="Dose" class="text-danger"></span></div>
+            <div class="col-md-6"><label asp-for="Duration" class="form-label"></label><input asp-for="Duration" class="form-control" placeholder="Ej. 7 días" /><span asp-validation-for="Duration" class="text-danger"></span></div>
+        </div>
+    </div>
+    <div class="form-card-footer"><a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a><button class="btn btn-primary" type="submit">Agregar a receta</button></div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,76 @@
+@model ClinicaApp.Services.ConsultationPageData
+
+@{
+    ViewData["Title"] = "Imprimir documentos";
+    var consultation = Model.Consultation;
+}
+
+<div class="print-toolbar">
+    <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@consultation.Id">&larr; Volver</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()">Imprimir</button>
+</div>
+
+<article class="print-document">
+    <header class="print-header">
+        <div class="print-clinic-mark" aria-hidden="true">+</div>
+        <div><p class="page-kicker">SISTEMA DE GESTIÓN CLÍNICA</p><h1>Resumen de atención</h1><p>Consulta del @((consultation.CloseTime ?? consultation.ArrivalTime).ToString("dd/MM/yyyy"))</p></div>
+    </header>
+
+    <section class="print-patient">
+        <h2>@Model.Patient.Name</h2>
+        <p>@Model.Patient.Age años · Teléfono: @Model.Patient.Phone · Fecha de nacimiento: @Model.Patient.DateOfBirth.ToString("dd/MM/yyyy")</p>
+    </section>
+
+    <section class="print-section">
+        <h2>Consulta</h2>
+        <p><strong>Motivo:</strong> @(consultation.Reason ?? "Sin registro")</p>
+        <p><strong>Síntomas:</strong> @(consultation.Symptoms ?? "Sin registro")</p>
+        <p><strong>Exploración física:</strong> @(consultation.PhysicalEvaluation ?? "Sin registro")</p>
+        <p><strong>Diagnóstico:</strong> @(consultation.Diagnosis ?? "Sin registro")</p>
+        <p><strong>Resultados:</strong> @(consultation.ExamResults ?? "Sin registro")</p>
+    </section>
+
+    <section class="print-section">
+        <h2>Signos vitales</h2>
+        <p>
+            Peso: @(consultation.Vitals?.WeightKg?.ToString("0.#") ?? "—") kg ·
+            Altura: @(consultation.Vitals?.HeightMeters?.ToString("0.00") ?? "—") m ·
+            Temperatura: @(consultation.Vitals?.Temperature?.ToString("0.0") ?? "—") °C ·
+            Presión: @(consultation.Vitals?.BloodPressure ?? "—") ·
+            Frecuencia cardíaca: @(consultation.Vitals?.HeartRate?.ToString() ?? "—") lpm ·
+            Saturación: @(consultation.Vitals?.OxygenSaturation?.ToString() ?? "—") %
+        </p>
+    </section>
+
+    <section class="print-section">
+        <h2>Receta médica</h2>
+        @if (consultation.Prescriptions.Count == 0) { <p>Sin medicamentos prescritos.</p> }
+        @foreach (var item in consultation.Prescriptions)
+        {
+            <p><strong>@item.Medication @item.Concentration</strong> — @item.Dose durante @item.Duration.</p>
+        }
+    </section>
+
+    <section class="print-section">
+        <h2>Órdenes de examen</h2>
+        @if (consultation.ExamOrders.Count == 0) { <p>Sin exámenes solicitados.</p> }
+        @foreach (var item in consultation.ExamOrders)
+        {
+            <p><strong>@item.ExamType</strong> — @(item.Instructions ?? "Sin indicaciones") · Estado: @item.State.</p>
+        }
+    </section>
+
+    @if (consultation.Incapacity is not null)
+    {
+        <section class="print-section">
+            <h2>Incapacidad</h2>
+            <p>@consultation.Incapacity.Days día(s) de reposo. @consultation.Incapacity.Justification</p>
+            <p>Emitida el @consultation.Incapacity.IssuedAt.ToString("dd/MM/yyyy").</p>
+        </section>
+    }
+
+    <footer class="print-signature">
+        <span>Documento generado el @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+        <div>Firma y sello de la doctora</div>
+    </footer>
+</article>

@@ -1,0 +1,175 @@
+@model ClinicaApp.ViewModels.ClinicalConsultationViewModel
+
+@{
+    ViewData["Title"] = "Consulta en curso";
+    var vitals = Model.Consultation.Vitals;
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">CONSULTA EN CURSO · @Model.Consultation.ArrivalTime.ToString("dd/MM/yyyy HH:mm")</p>
+        <h1>@Model.Patient.Name</h1>
+        <p class="page-subtitle">@Model.Patient.Age años · Consulta #@Model.ConsultationId · @Model.Patient.Phone</p>
+    </div>
+    <span class="badge rounded-pill text-bg-primary">En atención</span>
+</div>
+
+@if (Model.Previous is not null)
+{
+    <section class="previous-visit-card mb-4">
+        <div class="previous-visit-heading">
+            <div><p class="card-eyebrow">CONTEXTO CLÍNICO</p><h2>Consulta previa</h2></div>
+            <span class="step-pill">@(Model.Previous.ClosedAt?.ToString("dd/MM/yyyy") ?? "Historial")</span>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6"><p class="card-eyebrow">MOTIVO</p><p>@(Model.Previous.Reason ?? "Sin registro")</p></div>
+            <div class="col-md-6"><p class="card-eyebrow">DIAGNÓSTICO</p><p>@(Model.Previous.Diagnosis ?? "Sin registro")</p></div>
+        </div>
+        @if (Model.Previous.Prescriptions.Count > 0)
+        {
+            <div class="previous-medicines">
+                <span class="card-eyebrow">MEDICAMENTOS PREVIOS</span>
+                @foreach (var prescription in Model.Previous.Prescriptions)
+                {
+                    <span class="history-tag">@prescription.Medication @prescription.Concentration · @prescription.Dose</span>
+                }
+            </div>
+        }
+    </section>
+}
+
+<section class="vitals-summary-card mb-4">
+    <div class="section-heading mb-2"><div><h2>Signos vitales</h2><p>Registrados durante el triaje</p></div></div>
+    <div class="vitals-grid">
+        <div><small>PESO</small><strong>@(vitals?.WeightKg is null ? "—" : $"{vitals.WeightKg:0.#} kg")</strong></div>
+        <div><small>ALTURA</small><strong>@(vitals?.HeightMeters is null ? "—" : $"{vitals.HeightMeters:0.00} m")</strong></div>
+        <div><small>TEMPERATURA</small><strong>@(vitals?.Temperature is null ? "—" : $"{vitals.Temperature:0.0} °C")</strong></div>
+        <div><small>PRESIÓN</small><strong>@(vitals?.BloodPressure ?? "Pendiente")</strong></div>
+        <div><small>FRECUENCIA CARDÍACA</small><strong>@(vitals?.HeartRate is null ? "Pendiente" : $"{vitals.HeartRate} lpm")</strong></div>
+        <div><small>SATURACIÓN O₂</small><strong>@(vitals?.OxygenSaturation is null ? "Pendiente" : $"{vitals.OxygenSaturation} %")</strong></div>
+    </div>
+</section>
+
+<form asp-action="Atender" method="post" class="form-card">
+    <input asp-for="ConsultationId" type="hidden" />
+    <div class="form-card-header">
+        <div><h2>Registro clínico</h2><p>Guarda la información de esta atención antes de cerrarla.</p></div>
+        <a class="btn btn-light-blue btn-sm" asp-controller="Documentos" asp-action="Imprimir" asp-route-id="@Model.ConsultationId" target="_blank">Vista imprimible</a>
+    </div>
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="Reason" class="form-label"></label>
+                <textarea asp-for="Reason" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="Reason" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Symptoms" class="form-label"></label>
+                <textarea asp-for="Symptoms" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="Symptoms" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="PhysicalEvaluation" class="form-label"></label>
+                <textarea asp-for="PhysicalEvaluation" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="PhysicalEvaluation" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Diagnosis" class="form-label"></label>
+                <textarea asp-for="Diagnosis" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="Diagnosis" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="BloodPressure" class="form-label"></label>
+                <input asp-for="BloodPressure" class="form-control" placeholder="120/80" />
+                <span asp-validation-for="BloodPressure" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="HeartRate" class="form-label"></label>
+                <input asp-for="HeartRate" class="form-control" type="number" />
+                <span asp-validation-for="HeartRate" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="OxygenSaturation" class="form-label"></label>
+                <input asp-for="OxygenSaturation" class="form-control" type="number" />
+                <span asp-validation-for="OxygenSaturation" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="ExamResults" class="form-label"></label>
+                <textarea asp-for="ExamResults" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="ExamResults" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="form-card-footer form-actions-wrap">
+        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="Receta" asp-route-consultaId="@Model.ConsultationId">Agregar medicamento</a>
+        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="OrdenExamen" asp-route-consultaId="@Model.ConsultationId">Agregar examen</a>
+        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="Incapacidad" asp-route-consultaId="@Model.ConsultationId">Incapacidad</a>
+        <button class="btn btn-primary" type="submit">Guardar consulta</button>
+    </div>
+</form>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <section class="document-summary-card">
+            <p class="card-eyebrow">RECETAS</p>
+            @if (Model.Consultation.Prescriptions.Count == 0)
+            {
+                <p>Sin medicamentos agregados.</p>
+            }
+            @foreach (var item in Model.Consultation.Prescriptions)
+            {
+                <p><strong>@item.Medication</strong> @item.Concentration · @item.Dose por @item.Duration</p>
+            }
+        </section>
+    </div>
+    <div class="col-md-4">
+        <section class="document-summary-card">
+            <p class="card-eyebrow">ÓRDENES DE EXAMEN</p>
+            @if (Model.Consultation.ExamOrders.Count == 0)
+            {
+                <p>Sin órdenes agregadas.</p>
+            }
+            @foreach (var item in Model.Consultation.ExamOrders)
+            {
+                <div class="document-order-row">
+                    <p><strong>@item.ExamType</strong> · @item.State</p>
+                    <form asp-controller="Documentos" asp-action="ActualizarEstadoExamen" method="post">
+                        <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
+                        <input type="hidden" name="ordenId" value="@item.Id" />
+                        <select name="estado" class="form-select form-select-sm" aria-label="Estado de @item.ExamType">
+                            <option value="@EstadoOrdenExamen.Pendiente" selected="@(item.State == EstadoOrdenExamen.Pendiente)">Pendiente</option>
+                            <option value="@EstadoOrdenExamen.Completado" selected="@(item.State == EstadoOrdenExamen.Completado)">Completado</option>
+                        </select>
+                        <button class="btn btn-light-blue btn-sm" type="submit">Actualizar</button>
+                    </form>
+                </div>
+            }
+        </section>
+    </div>
+    <div class="col-md-4">
+        <section class="document-summary-card">
+            <p class="card-eyebrow">INCAPACIDAD</p>
+            @if (Model.Consultation.Incapacity is null)
+            {
+                <p>Sin incapacidad registrada.</p>
+            }
+            else
+            {
+                <p><strong>@Model.Consultation.Incapacity.Days día(s) de reposo</strong></p>
+                <p>@Model.Consultation.Incapacity.Justification</p>
+            }
+        </section>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end mt-3">
+    <form asp-action="Cerrar" method="post" onsubmit="return confirm('¿Cerrar esta consulta? Después ya no se podrá editar.');">
+        <input type="hidden" name="id" value="@Model.ConsultationId" />
+        <button class="btn btn-primary" type="submit">Finalizar consulta</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

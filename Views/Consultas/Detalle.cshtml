@@ -1,0 +1,72 @@
+@model ClinicaApp.Services.ConsultationPageData
+
+@{
+    ViewData["Title"] = "Detalle de consulta";
+    var consultation = Model.Consultation;
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">HISTORIAL CLÍNICO</p>
+        <h1>Consulta del @((consultation.CloseTime ?? consultation.ArrivalTime).ToString("dd/MM/yyyy"))</h1>
+        <p class="page-subtitle">@Model.Patient.Name · @Model.Patient.Age años</p>
+    </div>
+    <a class="btn btn-light-blue" asp-controller="Pacientes" asp-action="Expediente" asp-route-id="@Model.Patient.Id">&larr; Volver al expediente</a>
+</div>
+
+<section class="previous-visit-card">
+    <div class="previous-visit-heading">
+        <div><p class="card-eyebrow">RESUMEN CLÍNICO</p><h2>@(consultation.State == EstadoConsulta.Cerrada ? "Consulta completada" : "Consulta en curso")</h2></div>
+        <a class="btn btn-light-blue btn-sm" asp-controller="Documentos" asp-action="Imprimir" asp-route-id="@consultation.Id" target="_blank">Imprimir resumen</a>
+    </div>
+    <div class="clinical-detail">
+        <p class="card-eyebrow">MOTIVO</p><p>@(consultation.Reason ?? "Sin registro")</p>
+        <div class="vitals-grid">
+            <div><small>PRESIÓN</small><strong>@(consultation.Vitals?.BloodPressure ?? "—")</strong></div>
+            <div><small>FRECUENCIA CARDÍACA</small><strong>@(consultation.Vitals?.HeartRate is null ? "—" : $"{consultation.Vitals.HeartRate} lpm")</strong></div>
+            <div><small>SATURACIÓN O₂</small><strong>@(consultation.Vitals?.OxygenSaturation is null ? "—" : $"{consultation.Vitals.OxygenSaturation} %")</strong></div>
+            <div><small>TEMPERATURA</small><strong>@(consultation.Vitals?.Temperature is null ? "—" : $"{consultation.Vitals.Temperature:0.0} °C")</strong></div>
+        </div>
+        <p class="card-eyebrow">SÍNTOMAS</p><p>@(consultation.Symptoms ?? "Sin registro")</p>
+        <p class="card-eyebrow">EXPLORACIÓN FÍSICA</p><p>@(consultation.PhysicalEvaluation ?? "Sin registro")</p>
+        <p class="card-eyebrow">DIAGNÓSTICO</p><p>@(consultation.Diagnosis ?? "Sin registro")</p>
+        <p class="card-eyebrow">RESULTADOS DE EXÁMENES</p><p>@(consultation.ExamResults ?? "Sin registro")</p>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <section class="document-summary-card">
+                <p class="card-eyebrow">RECETA</p>
+                @if (consultation.Prescriptions.Count == 0) { <p>Sin receta.</p> }
+                @foreach (var item in consultation.Prescriptions) { <p>@item.Medication @item.Concentration · @item.Dose · @item.Duration</p> }
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="document-summary-card">
+                <p class="card-eyebrow">EXÁMENES</p>
+                @if (consultation.ExamOrders.Count == 0) { <p>Sin órdenes.</p> }
+                @foreach (var item in consultation.ExamOrders)
+                {
+                    <div class="document-order-row">
+                        <p>@item.ExamType · @item.State</p>
+                        <form asp-controller="Documentos" asp-action="ActualizarEstadoExamen" method="post">
+                            <input type="hidden" name="consultaId" value="@consultation.Id" />
+                            <input type="hidden" name="ordenId" value="@item.Id" />
+                            <select name="estado" class="form-select form-select-sm" aria-label="Estado de @item.ExamType">
+                                <option value="@EstadoOrdenExamen.Pendiente" selected="@(item.State == EstadoOrdenExamen.Pendiente)">Pendiente</option>
+                                <option value="@EstadoOrdenExamen.Completado" selected="@(item.State == EstadoOrdenExamen.Completado)">Completado</option>
+                            </select>
+                            <button class="btn btn-light-blue btn-sm" type="submit">Actualizar</button>
+                        </form>
+                    </div>
+                }
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="document-summary-card">
+                <p class="card-eyebrow">INCAPACIDAD</p>
+                @if (consultation.Incapacity is null) { <p>Sin incapacidad.</p> }
+                else { <p>@consultation.Incapacity.Days día(s) · @consultation.Incapacity.Justification</p> }
+            </section>
+        </div>
+    </div>
+</section>

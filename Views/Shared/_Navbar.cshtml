@@ -1,0 +1,74 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var isHome = string.Equals(controller, "Home", StringComparison.OrdinalIgnoreCase);
+    var isPatients = string.Equals(controller, "Pacientes", StringComparison.OrdinalIgnoreCase);
+    var isPatientRegistration = string.Equals(action, "Registrar", StringComparison.OrdinalIgnoreCase);
+    var isSecretaries = string.Equals(controller, "Secretarias", StringComparison.OrdinalIgnoreCase);
+    var isWaitingRoom = string.Equals(controller, "SalaEspera", StringComparison.OrdinalIgnoreCase);
+}
+
+<aside class="clinic-sidebar">
+    <div class="sidebar-brand">
+        <a class="brand-link" asp-controller="Home" asp-action="Index">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 21s-8-4.7-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.3-8 11-8 11Z" />
+                    <path d="M5.5 12h4l1.5-3 2.2 6 1.5-3h3.8" />
+                </svg>
+            </span>
+            <span>
+                <strong>Clínica</strong>
+                <small>Gestión de pacientes</small>
+            </span>
+        </a>
+    </div>
+
+    <div class="sidebar-section-label">MENÚ</div>
+    <nav class="sidebar-nav" aria-label="Navegación principal">
+        <a class="sidebar-link @(isHome ? "active" : "")"
+           asp-controller="Home" asp-action="Index" aria-current="@(isHome ? "page" : null)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+            <span>Inicio</span>
+        </a>
+        <a class="sidebar-link @(isWaitingRoom ? "active" : "")"
+           asp-controller="SalaEspera" asp-action="Index" aria-current="@(isWaitingRoom ? "page" : null)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6" /><circle cx="19" cy="7" r="1" /></svg>
+            <span>Sala de espera</span>
+        </a>
+        <a class="sidebar-link @(isPatients ? "active" : "")"
+           asp-controller="Pacientes" asp-action="Buscar" aria-current="@(isPatients ? "page" : null)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+            <span>Pacientes</span>
+        </a>
+        @if (User.IsInRole("Secretaria"))
+        {
+            <a class="sidebar-link"
+               asp-controller="Pacientes" asp-action="Registrar" aria-current="@(isPatientRegistration ? "page" : null)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><path d="M3 20v-1.5A5.5 5.5 0 0 1 8.5 13h1a5.5 5.5 0 0 1 5.5 5.5V20M16 5.2a3.5 3.5 0 0 1 0 6.6M17 14a4.5 4.5 0 0 1 4 4.5V20" /></svg>
+                <span>Nuevo paciente</span>
+            </a>
+        }
+        @if (User.IsInRole("Doctora"))
+        {
+            <a class="sidebar-link @(isSecretaries ? "active" : "")"
+               asp-controller="Secretarias" asp-action="Index" aria-current="@(isSecretaries ? "page" : null)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><path d="M3 20v-1.5A5.5 5.5 0 0 1 8.5 13h1a5.5 5.5 0 0 1 5.5 5.5V20M18 8v6M15 11h6" /></svg>
+                <span>Usuarios</span>
+            </a>
+        }
+    </nav>
+
+    <div class="sidebar-profile">
+        <span class="profile-avatar" aria-hidden="true">@User.Identity?.Name?.FirstOrDefault()</span>
+        <span>
+            <strong>@User.Identity?.Name</strong>
+            <small>@(User.IsInRole("Doctora") ? "Doctora" : "Secretaria")</small>
+        </span>
+        <form asp-controller="Account" asp-action="Logout" method="post" class="ms-auto">
+            <button class="logout-button" type="submit" aria-label="Cerrar sesión" title="Cerrar sesión">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" /></svg>
+            </button>
+        </form>
+    </div>
+</aside>

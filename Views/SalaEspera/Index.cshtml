@@ -1,0 +1,102 @@
+@model IReadOnlyList<ClinicaApp.Services.WaitingRoomItem>
+
+@{
+    ViewData["Title"] = "Sala de espera";
+    var waitingCount = Model.Count(item => item.State == EstadoConsulta.Esperando);
+    var inCareCount = Model.Count(item => item.State == EstadoConsulta.EnAtencion);
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">ATENCIÓN DEL DÍA</p>
+        <h1>Sala de espera</h1>
+        <p class="page-subtitle">@DateTime.Today.ToString("dddd d 'de' MMMM 'de' yyyy") · @Model.Count paciente(s) activos</p>
+    </div>
+    <a class="btn btn-primary" asp-controller="Pacientes" asp-action="Buscar">Buscar paciente</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4"><div class="stat-card"><span>EN ESPERA</span><strong>@waitingCount</strong></div></div>
+    <div class="col-sm-4"><div class="stat-card"><span>EN CONSULTA</span><strong>@inCareCount</strong></div></div>
+    <div class="col-sm-4"><div class="stat-card"><span>ATENCIONES ACTIVAS</span><strong>@Model.Count</strong></div></div>
+</div>
+
+<section class="queue-list">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state queue-empty">
+            <h2>No hay pacientes en espera</h2>
+            <p>Busca un expediente y registra la llegada para agregar al paciente a la fila.</p>
+            @if (User.IsInRole("Secretaria"))
+            {
+                <a class="btn btn-primary" asp-controller="Pacientes" asp-action="Buscar">Buscar paciente</a>
+            }
+        </div>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <article class="queue-card @(item.State == EstadoConsulta.EnAtencion ? "queue-card-active" : "") @(item.Priority == PrioridadAtencion.Alta ? "queue-card-urgent" : "")">
+                <span class="user-avatar" aria-hidden="true">@item.PatientName[..1].ToUpperInvariant()</span>
+                <div class="queue-patient">
+                    <strong>@item.PatientName</strong>
+                    <span>
+                        @(item.State == EstadoConsulta.Esperando ? $"Llegó a las {item.ArrivalTime:HH:mm}" : $"Consulta iniciada a las {item.StartTime:HH:mm}")
+                        · @item.Age años
+                    </span>
+                </div>
+                <div class="queue-vitals">
+                    @if (item.WeightKg.HasValue)
+                    {
+                        <span><small>PESO</small>@item.WeightKg.Value.ToString("0.#") kg</span>
+                    }
+                    @if (item.HeightMeters.HasValue)
+                    {
+                        <span><small>ALTURA</small>@item.HeightMeters.Value.ToString("0.00") m</span>
+                    }
+                    @if (item.Temperature.HasValue)
+                    {
+                        <span><small>TEMP.</small>@item.Temperature.Value.ToString("0.0") °C</span>
+                    }
+                </div>
+                @if (item.Priority == PrioridadAtencion.Alta)
+                {
+                    <span class="badge rounded-pill text-bg-danger">Prioridad alta</span>
+                }
+                @if (item.State == EstadoConsulta.EnAtencion)
+                {
+                    @if (User.IsInRole("Doctora"))
+                    {
+                        <a class="btn btn-outline-primary btn-sm" asp-controller="Consultas" asp-action="Atender" asp-route-id="@item.ConsultationId">Continuar consulta</a>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill text-bg-primary">En atención</span>
+                    }
+                }
+                else if (User.IsInRole("Secretaria"))
+                {
+                    <div class="queue-actions">
+                        <a class="btn btn-light-blue btn-sm" asp-action="SignosVitales" asp-route-id="@item.ConsultationId">
+                            @(item.WeightKg.HasValue ? "Editar triaje" : "Registrar triaje")
+                        </a>
+                        <form asp-action="AsignarPrioridad" method="post" class="priority-form">
+                            <input type="hidden" name="consultaId" value="@item.ConsultationId" />
+                            <select name="prioridad" class="form-select form-select-sm" aria-label="Prioridad de @item.PatientName">
+                                <option value="@PrioridadAtencion.Baja" selected="@(item.Priority == PrioridadAtencion.Baja)">Baja</option>
+                                <option value="@PrioridadAtencion.Media" selected="@(item.Priority == PrioridadAtencion.Media)">Media</option>
+                                <option value="@PrioridadAtencion.Alta" selected="@(item.Priority == PrioridadAtencion.Alta)">Alta</option>
+                            </select>
+                            <button class="btn btn-outline-primary btn-sm" type="submit">Guardar</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-sm" asp-controller="Consultas" asp-action="Atender" asp-route-id="@item.ConsultationId">Atender</a>
+                }
+            </article>
+        }
+    }
+</section>
