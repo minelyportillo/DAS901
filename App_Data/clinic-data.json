@@ -1,0 +1,14 @@
+{
+  "Patients": [
+    {
+      "Id": 1,
+      "Name": "Daniel Portillo",
+      "DateOfBirth": "2005-06-03T00:00:00",
+      "Phone": "72829934",
+      "Allergies": null,
+      "RegisteredAt": "2026-10-17T16:49:05.946465-06:00",
+      "Antecedents": [],
+      "Consultations": []
+    }
+  ]
+}
