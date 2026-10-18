@@ -9,6 +9,68 @@
       "RegisteredAt": "2026-10-17T16:49:05.946465-06:00",
       "Antecedents": [],
       "Consultations": []
+    },
+    {
+      "Id": 2,
+      "Name": "Jose",
+      "DateOfBirth": "2008-10-17T00:00:00",
+      "Phone": "71041121",
+      "Allergies": "nada",
+      "RegisteredAt": "2026-10-17T17:55:43.2186194-06:00",
+      "Antecedents": [],
+      "Consultations": [
+        {
+          "Id": 1,
+          "ArrivalTime": "2026-10-17T17:55:52.9977769-06:00",
+          "StartTime": "2026-10-17T17:57:54.3151002-06:00",
+          "CloseTime": "2026-10-17T18:06:06.2154496-06:00",
+          "Priority": 3,
+          "State": 3,
+          "Reason": "sadfafa",
+          "Symptoms": "asfasdfa",
+          "PhysicalEvaluation": "asdfa",
+          "Diagnosis": "asfda",
+          "ExamResults": "asdfasfasfaff",
+          "Vitals": {
+            "WeightKg": 80,
+            "HeightMeters": 1.65,
+            "Temperature": 38,
+            "BloodPressure": "120/80",
+            "HeartRate": 80,
+            "OxygenSaturation": 67
+          },
+          "Prescriptions": [
+            {
+              "Id": 1,
+              "Medication": "asdfad",
+              "Concentration": "asdfa",
+              "Dose": "asdf",
+              "Duration": "asdfa"
+            },
+            {
+              "Id": 2,
+              "Medication": "asdf",
+              "Concentration": "asdfd",
+              "Dose": "asdf",
+              "Duration": "asdf"
+            }
+          ],
+          "Incapacity": {
+            "Days": 1,
+            "Justification": "salkdjflkasjfklj",
+            "IssuedAt": "2026-10-17T17:59:25.5496904-06:00"
+          },
+          "ExamOrders": [
+            {
+              "Id": 1,
+              "ExamType": "asdfa",
+              "Instructions": "asdfa",
+              "RequestedAt": "2026-10-17T17:59:06.4008512-06:00",
+              "State": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }
