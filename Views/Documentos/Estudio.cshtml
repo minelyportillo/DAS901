@@ -1,0 +1,93 @@
+@model ClinicaApp.ViewModels.StudyViewModel
+
+@{
+    var esEdicion = Model.EstudioId.HasValue;
+    ViewData["Title"] = esEdicion ? "Editar estudio médico" : "Registrar estudio médico";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p>
+        <h1>@(esEdicion ? "Editar estudio / lectura de examen" : "Registrar estudio / lectura de examen")</h1>
+        <p class="page-subtitle">Registra el resultado de una orden médica emitida en una consulta anterior o un examen externo traído por el paciente (tabla estudios).</p>
+    </div>
+    <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">&larr; Volver a consulta</a>
+</div>
+
+<form asp-action="Estudio" method="post" class="form-card document-form">
+    <input asp-for="ConsultationId" type="hidden" />
+    <input asp-for="EstudioId" type="hidden" />
+    <input asp-for="PatientId" type="hidden" />
+    <div class="form-card-header">
+        <div>
+            <h2>Datos del estudio (estudios)</h2>
+            <p>Si seleccionas una orden emitida en una consulta previa, el nombre es opcional porque se toma de la orden. Si es un examen externo sin orden previa, ingresa su nombre.</p>
+        </div>
+    </div>
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="IdDetalleOrden" class="form-label"></label>
+                <select asp-for="IdDetalleOrden" class="form-select" id="selectDetalleOrden">
+                    <option value="">-- Examen externo (sin orden médica previa) --</option>
+                    @foreach (var orden in Model.OrdenesDisponibles)
+                    {
+                        <option value="@orden.IdDetalleOrden" data-nombre="@orden.Nombre">
+                            Orden #@orden.IdDetalleOrden: @orden.Nombre (Emitida el @orden.FechaEmision.ToString("dd/MM/yyyy")) @(orden.TieneEstudioRegistrado ? "· [Ya tiene lectura]" : "")
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="IdDetalleOrden" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-8">
+                <label asp-for="Nombre" class="form-label" id="labelNombreEstudio"></label>
+                <input asp-for="Nombre" class="form-control" id="inputNombreEstudio" placeholder="Ej. Ultrasonografía abdominal externa" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+                <div class="form-text" id="ayudaNombreEstudio">Obligatorio para exámenes externos; opcional si seleccionaste una orden médica arriba.</div>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Fecha" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Fecha" class="form-control" type="date" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="Fecha" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Observaciones" class="form-label"></label> <span class="text-danger">*</span>
+                <textarea asp-for="Observaciones" class="form-control" rows="4" placeholder="Escribe los resultados, hallazgos e interpretación médica del estudio..."></textarea>
+                <span asp-validation-for="Observaciones" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="form-card-footer">
+        <a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a>
+        <button class="btn btn-primary" type="submit">@(esEdicion ? "Guardar cambios" : "Guardar estudio")</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const selectOrden = document.getElementById("selectDetalleOrden");
+            const inputNombre = document.getElementById("inputNombreEstudio");
+            const ayuda = document.getElementById("ayudaNombreEstudio");
+            if (!selectOrden || !inputNombre || !ayuda) return;
+
+            const actualizarEstadoNombre = () => {
+                if (selectOrden.value) {
+                    inputNombre.placeholder = "Opcional (se usará el nombre de la orden seleccionada)";
+                    ayuda.textContent = "Opcional: el nombre ya está definido en el detalle de la orden seleccionada.";
+                } else {
+                    inputNombre.placeholder = "Ej. Ultrasonografía abdominal externa (Obligatorio)";
+                    ayuda.textContent = "Obligatorio porque es un examen externo sin orden médica previa.";
+                }
+            };
+
+            selectOrden.addEventListener("change", actualizarEstadoNombre);
+            actualizarEstadoNombre();
+        })();
+    </script>
+}

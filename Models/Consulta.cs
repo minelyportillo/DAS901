@@ -6,50 +6,52 @@ using ClinicaApp.Models.Enums;
 
 namespace ClinicaApp.Models
 {
-    [Table("Consultas")]
+    [Table("consultas")]
     public class Consulta
     {
         [Key]
-        public int IdConsulta { get; set; }
+        [Column("id")]
+        public int Id { get; set; }
 
         [Required]
+        [Column("id_paciente")]
         public int IdPaciente { get; set; }
 
         [Required]
-        public DateTime HoraLlegada { get; set; } = DateTime.Now;
+        [Column("fecha_hora_inicio")]
+        public DateTime FechaHoraInicio { get; set; } = DateTime.Now;
 
-        public DateTime? HoraInicioAtencion { get; set; }
-        public DateTime? HoraCierre { get; set; }
+        [Column("fecha_hora_finalizacion")]
+        public DateTime? FechaHoraFinalizacion { get; set; }
+
+        [Column("motivo", TypeName = "nvarchar(max)")]
+        public string? Motivo { get; set; }
+
+        [Column("examen_fisico", TypeName = "nvarchar(max)")]
+        public string? ExamenFisico { get; set; }
+
+        [StringLength(500)]
+        [Column("diagnostico")]
+        public string? Diagnostico { get; set; }
 
         [Required]
+        [Column("prioridad")]
         public PrioridadAtencion Prioridad { get; set; } = PrioridadAtencion.Media;
 
         [Required]
+        [Column("estado")]
         public EstadoConsulta Estado { get; set; } = EstadoConsulta.Esperando;
 
-        [StringLength(300)]
-        public string? Motivo { get; set; }
-
-        [StringLength(1000)]
-        public string? Sintomas { get; set; }
-
-        [StringLength(1000)]
-        public string? EvaluacionFisica { get; set; }
-
-        [StringLength(500)]
-        public string? Diagnostico { get; set; }
-
-        [StringLength(500)]
-        public string? ResultadosExamenesClave { get; set; }
-
-        // Relación con el paciente
-        [ForeignKey("IdPaciente")]
+        [ForeignKey(nameof(IdPaciente))]
         public virtual Paciente Paciente { get; set; } = null!;
 
-        // Relaciones con los datos clínicos
+        // Relaciones 1:1 y 1:0..1
         public virtual SignosVitales? SignosVitales { get; set; }
-        public virtual ICollection<RecetaDetalle> Recetas { get; set; } = new List<RecetaDetalle>();
-        public virtual ICollection<Incapacidad> Incapacidades { get; set; } = new List<Incapacidad>();
-        public virtual ICollection<OrdenExamen> OrdenesExamen { get; set; } = new List<OrdenExamen>();
+        public virtual Incapacidad? Incapacidad { get; set; }
+
+        // Relaciones 1:N
+        public virtual ICollection<Receta> Recetas { get; set; } = new List<Receta>();
+        public virtual ICollection<Orden> Ordenes { get; set; } = new List<Orden>();
+        public virtual ICollection<Estudio> EstudiosLeidos { get; set; } = new List<Estudio>();
     }
 }

@@ -3,34 +3,39 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClinicaApp.Models
 {
-    [Table("SignosVitales")]
+    [Table("signos_vitales")]
     public class SignosVitales
     {
         [Key]
-        public int IdSignoVital { get; set; }
+        [Column("id")]
+        public int Id { get; set; }
 
         [Required]
+        [Column("id_consulta")]
         public int IdConsulta { get; set; }
 
-        // Datos registrados por Secretaría
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal? PesoKg { get; set; }
+        [Column("temperatura")]
+        public double? Temperatura { get; set; }
 
-        [Column(TypeName = "decimal(3,2)")]
-        public decimal? AlturaMetros { get; set; }
+        [Column("altura")]
+        public double? Altura { get; set; }
 
-        [Column(TypeName = "decimal(4,1)")]
-        public decimal? Temperatura { get; set; }
+        [Column("peso")]
+        public double? Peso { get; set; }
 
-        // Datos complementados por Doctora
-        [StringLength(10)]
-        public string? PresionArterial { get; set; }
+        [Column("presion_sistolica")]
+        public int? PresionSistolica { get; set; }
 
-        public int? FrecuenciaCardiaca { get; set; }
-        public int? SaturacionOxigeno { get; set; }
+        [Column("presion_diastolica")]
+        public int? PresionDiastolica { get; set; }
 
-        // Relación 1 a 1 con Consulta
-        [ForeignKey("IdConsulta")]
+        [Column("concentracion_oxigeno")]
+        public int? ConcentracionOxigeno { get; set; }
+
+        [Column("ritmo_cardiaco")]
+        public int? RitmoCardiaco { get; set; }
+
+        [ForeignKey(nameof(IdConsulta))]
         public virtual Consulta Consulta { get; set; } = null!;
     }
 }

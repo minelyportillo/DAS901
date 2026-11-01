@@ -3,69 +3,108 @@
 @{
     ViewData["Title"] = "Detalle de consulta";
     var consultation = Model.Consultation;
+    var vitals = consultation.SignosVitales;
+    var recetasDetalles = consultation.Recetas.SelectMany(r => r.Detalles).ToArray();
+    var ordenesDetalles = consultation.Ordenes.SelectMany(o => o.Detalles).ToArray();
 }
 
 <div class="page-heading">
     <div>
         <p class="page-kicker">HISTORIAL CLÍNICO</p>
-        <h1>Consulta del @((consultation.CloseTime ?? consultation.ArrivalTime).ToString("dd/MM/yyyy"))</h1>
-        <p class="page-subtitle">@Model.Patient.Name · @Model.Patient.Age años</p>
+        <h1>Consulta del @((consultation.FechaHoraFinalizacion ?? consultation.FechaHoraInicio).ToString("dd/MM/yyyy"))</h1>
+        <p class="page-subtitle">
+            @Model.Patient.Nombre · @Model.Patient.Age años
+            @if (!string.IsNullOrWhiteSpace(Model.Patient.Dui))
+            {
+                <text> · DUI: @Model.Patient.Dui</text>
+            }
+        </p>
     </div>
     <a class="btn btn-light-blue" asp-controller="Pacientes" asp-action="Expediente" asp-route-id="@Model.Patient.Id">&larr; Volver al expediente</a>
 </div>
 
 <section class="previous-visit-card">
     <div class="previous-visit-heading">
-        <div><p class="card-eyebrow">RESUMEN CLÍNICO</p><h2>@(consultation.State == EstadoConsulta.Cerrada ? "Consulta completada" : "Consulta en curso")</h2></div>
+        <div>
+            <p class="card-eyebrow">RESUMEN CLÍNICO</p>
+            <h2>@(consultation.Estado == EstadoConsulta.Cerrada ? "Consulta finalizada" : "Consulta en curso")</h2>
+            <small class="text-muted">
+                Inicio: @consultation.FechaHoraInicio.ToString("dd/MM/yyyy HH:mm")
+                @if (consultation.FechaHoraFinalizacion.HasValue)
+                {
+                    <text> · Fin: @consultation.FechaHoraFinalizacion.Value.ToString("dd/MM/yyyy HH:mm")</text>
+                }
+            </small>
+        </div>
         <a class="btn btn-light-blue btn-sm" asp-controller="Documentos" asp-action="Imprimir" asp-route-id="@consultation.Id" target="_blank">Imprimir resumen</a>
     </div>
-    <div class="clinical-detail">
-        <p class="card-eyebrow">MOTIVO</p><p>@(consultation.Reason ?? "Sin registro")</p>
-        <div class="vitals-grid">
-            <div><small>PRESIÓN</small><strong>@(consultation.Vitals?.BloodPressure ?? "—")</strong></div>
-            <div><small>FRECUENCIA CARDÍACA</small><strong>@(consultation.Vitals?.HeartRate is null ? "—" : $"{consultation.Vitals.HeartRate} lpm")</strong></div>
-            <div><small>SATURACIÓN O₂</small><strong>@(consultation.Vitals?.OxygenSaturation is null ? "—" : $"{consultation.Vitals.OxygenSaturation} %")</strong></div>
-            <div><small>TEMPERATURA</small><strong>@(consultation.Vitals?.Temperature is null ? "—" : $"{consultation.Vitals.Temperature:0.0} °C")</strong></div>
+    <div class="clinical-detail mb-3">
+        <p class="card-eyebrow">MOTIVO</p><p>@(consultation.Motivo ?? "Sin registro")</p>
+        <div class="vitals-grid my-3">
+            <div><small>PESO</small><strong>@(vitals?.Peso is null ? "—" : $"{vitals.Peso:0.#} kg")</strong></div>
+            <div><small>ALTURA</small><strong>@(vitals?.Altura is null ? "—" : $"{vitals.Altura:0.00} m")</strong></div>
+            <div><small>TEMPERATURA</small><strong>@(vitals?.Temperatura is null ? "—" : $"{vitals.Temperatura:0.0} °C")</strong></div>
+            <div><small>PRESIÓN (SIST./DIAST.)</small><strong>@(vitals?.PresionSistolica is not null && vitals?.PresionDiastolica is not null ? $"{vitals.PresionSistolica}/{vitals.PresionDiastolica} mmHg" : "—")</strong></div>
+            <div><small>RITMO CARDÍACO</small><strong>@(vitals?.RitmoCardiaco is null ? "—" : $"{vitals.RitmoCardiaco} lpm")</strong></div>
+            <div><small>CONCENTRACIÓN O₂</small><strong>@(vitals?.ConcentracionOxigeno is null ? "—" : $"{vitals.ConcentracionOxigeno} %")</strong></div>
         </div>
-        <p class="card-eyebrow">SÍNTOMAS</p><p>@(consultation.Symptoms ?? "Sin registro")</p>
-        <p class="card-eyebrow">EXPLORACIÓN FÍSICA</p><p>@(consultation.PhysicalEvaluation ?? "Sin registro")</p>
-        <p class="card-eyebrow">DIAGNÓSTICO</p><p>@(consultation.Diagnosis ?? "Sin registro")</p>
-        <p class="card-eyebrow">RESULTADOS DE EXÁMENES</p><p>@(consultation.ExamResults ?? "Sin registro")</p>
+        <p class="card-eyebrow">EXAMEN FÍSICO</p><p>@(consultation.ExamenFisico ?? "Sin registro")</p>
+        <p class="card-eyebrow">DIAGNÓSTICO</p><p>@(consultation.Diagnostico ?? "Sin registro")</p>
     </div>
     <div class="row g-3">
-        <div class="col-md-4">
-            <section class="document-summary-card">
+        <div class="col-md-6">
+            <section class="document-summary-card h-100">
                 <p class="card-eyebrow">RECETA</p>
-                @if (consultation.Prescriptions.Count == 0) { <p>Sin receta.</p> }
-                @foreach (var item in consultation.Prescriptions) { <p>@item.Medication @item.Concentration · @item.Dose · @item.Duration</p> }
-            </section>
-        </div>
-        <div class="col-md-4">
-            <section class="document-summary-card">
-                <p class="card-eyebrow">EXÁMENES</p>
-                @if (consultation.ExamOrders.Count == 0) { <p>Sin órdenes.</p> }
-                @foreach (var item in consultation.ExamOrders)
+                @if (recetasDetalles.Length == 0) { <p>Sin receta.</p> }
+                @foreach (var item in recetasDetalles)
                 {
-                    <div class="document-order-row">
-                        <p>@item.ExamType · @item.State</p>
-                        <form asp-controller="Documentos" asp-action="ActualizarEstadoExamen" method="post">
-                            <input type="hidden" name="consultaId" value="@consultation.Id" />
-                            <input type="hidden" name="ordenId" value="@item.Id" />
-                            <select name="estado" class="form-select form-select-sm" aria-label="Estado de @item.ExamType">
-                                <option value="@EstadoOrdenExamen.Pendiente" selected="@(item.State == EstadoOrdenExamen.Pendiente)">Pendiente</option>
-                                <option value="@EstadoOrdenExamen.Completado" selected="@(item.State == EstadoOrdenExamen.Completado)">Completado</option>
-                            </select>
-                            <button class="btn btn-light-blue btn-sm" type="submit">Actualizar</button>
-                        </form>
-                    </div>
+                    <p class="mb-1">
+                        <strong>@item.NombreMedicamento</strong> · Dosis: @item.Dosis · Frecuencia: @item.Frecuencia · Duración: @item.Duracion
+                        @if (!string.IsNullOrWhiteSpace(item.Indicaciones))
+                        {
+                            <br /><small class="text-muted">Indicaciones: @item.Indicaciones</small>
+                        }
+                    </p>
                 }
             </section>
         </div>
-        <div class="col-md-4">
-            <section class="document-summary-card">
+        <div class="col-md-6">
+            <section class="document-summary-card h-100">
                 <p class="card-eyebrow">INCAPACIDAD</p>
-                @if (consultation.Incapacity is null) { <p>Sin incapacidad.</p> }
-                else { <p>@consultation.Incapacity.Days día(s) · @consultation.Incapacity.Justification</p> }
+                @if (consultation.Incapacidad is null) { <p>Sin incapacidad.</p> }
+                else
+                {
+                    <p class="mb-1"><strong>Del @consultation.Incapacidad.FechaInicio.ToString("dd/MM/yyyy") al @consultation.Incapacidad.FechaFin.ToString("dd/MM/yyyy")</strong> (@consultation.Incapacidad.DiasCalculados día(s))</p>
+                    <p class="mb-0">@consultation.Incapacidad.Motivo</p>
+                }
+            </section>
+        </div>
+        <div class="col-md-6">
+            <section class="document-summary-card h-100">
+                <p class="card-eyebrow">ÓRDENES DE EXAMEN EMITIDAS</p>
+                @if (ordenesDetalles.Length == 0) { <p>Sin órdenes emitidas.</p> }
+                @foreach (var item in ordenesDetalles)
+                {
+                    <p class="mb-1">
+                        <strong>@item.Nombre</strong>
+                        @if (!string.IsNullOrWhiteSpace(item.Indicaciones))
+                        {
+                            <text> — @item.Indicaciones</text>
+                        }
+                    </p>
+                }
+            </section>
+        </div>
+        <div class="col-md-6">
+            <section class="document-summary-card h-100">
+                <p class="card-eyebrow">ESTUDIOS LEÍDOS EN LA CONSULTA</p>
+                @if (Model.EstudiosLeidos.Count == 0) { <p>Sin estudios leídos en esta consulta.</p> }
+                @foreach (var estudio in Model.EstudiosLeidos)
+                {
+                    <p class="mb-1">
+                        <strong>@estudio.NombreMostrar</strong> (@estudio.Fecha.ToString("dd/MM/yyyy")) — @estudio.Observaciones
+                    </p>
+                }
             </section>
         </div>
     </div>

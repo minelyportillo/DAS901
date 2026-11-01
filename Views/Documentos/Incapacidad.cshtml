@@ -5,19 +5,74 @@
 }
 
 <div class="page-heading">
-    <div><p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p><h1>Emitir incapacidad</h1><p class="page-subtitle">Registra los días de reposo y su justificación clínica.</p></div>
+    <div>
+        <p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p>
+        <h1>Emitir incapacidad</h1>
+        <p class="page-subtitle">Registra el período de vigencia (fecha de inicio y fecha de fin) y el motivo clínico (tabla incapacidades).</p>
+    </div>
     <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">&larr; Volver a consulta</a>
 </div>
 
 <form asp-action="Incapacidad" method="post" class="form-card document-form">
     <input asp-for="ConsultationId" type="hidden" />
-    <div class="form-card-header"><div><h2>Datos de incapacidad</h2><p>La incapacidad se asociará a la consulta actual.</p></div></div>
+    <div class="form-card-header">
+        <div>
+            <h2>Datos de incapacidad (incapacidades)</h2>
+            <p>La incapacidad se asociará en relación 1:0..1 a la consulta actual.</p>
+        </div>
+    </div>
     <div class="form-card-body">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-        <div class="mb-3"><label asp-for="Days" class="form-label"></label><input asp-for="Days" class="form-control" type="number" min="1" max="365" /><span asp-validation-for="Days" class="text-danger"></span></div>
-        <div><label asp-for="Justification" class="form-label"></label><textarea asp-for="Justification" class="form-control" rows="4"></textarea><span asp-validation-for="Justification" class="text-danger"></span></div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FechaInicio" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="FechaInicio" class="form-control" type="date" id="fechaInicio" />
+                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="FechaFin" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="FechaFin" class="form-control" type="date" id="fechaFin" />
+                <span asp-validation-for="FechaFin" class="text-danger"></span>
+                <div class="form-text" id="diasCalculados"></div>
+            </div>
+            <div class="col-12">
+                <label asp-for="Motivo" class="form-label"></label> <span class="text-danger">*</span>
+                <textarea asp-for="Motivo" class="form-control" rows="4" placeholder="Describe el motivo médico de la incapacidad..."></textarea>
+                <span asp-validation-for="Motivo" class="text-danger"></span>
+            </div>
+        </div>
     </div>
-    <div class="form-card-footer"><a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a><button class="btn btn-primary" type="submit">Guardar incapacidad</button></div>
+    <div class="form-card-footer">
+        <a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Guardar incapacidad</button>
+    </div>
 </form>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const inicio = document.getElementById("fechaInicio");
+            const fin = document.getElementById("fechaFin");
+            const info = document.getElementById("diasCalculados");
+            if (!inicio || !fin || !info) return;
+
+            const calcular = () => {
+                if (!inicio.value || !fin.value) {
+                    info.textContent = "";
+                    return;
+                }
+                const d1 = new Date(inicio.value);
+                const d2 = new Date(fin.value);
+                const diff = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                info.textContent = diff > 0
+                    ? `Total calculado: ${diff} ${diff === 1 ? "día" : "días"} de incapacidad.`
+                    : "La fecha de fin debe ser igual o posterior a la fecha de inicio.";
+            };
+
+            inicio.addEventListener("change", calcular);
+            fin.addEventListener("change", calcular);
+            calcular();
+        })();
+    </script>
+}

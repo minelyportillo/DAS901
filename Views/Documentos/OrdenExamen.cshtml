@@ -1,23 +1,45 @@
 @model ClinicaApp.ViewModels.ExamOrderViewModel
 
 @{
-    ViewData["Title"] = "Orden de examen";
+    var esEdicion = Model.DetalleOrdenId.HasValue;
+    ViewData["Title"] = esEdicion ? "Editar orden de examen" : "Orden de examen";
 }
 
 <div class="page-heading">
-    <div><p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p><h1>Solicitar examen</h1><p class="page-subtitle">Registra la orden que quedará asociada a la consulta.</p></div>
+    <div>
+        <p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p>
+        <h1>@(esEdicion ? "Editar orden de examen" : "Emitir orden de examen")</h1>
+        <p class="page-subtitle">Registra el examen solicitado y sus indicaciones (ordenes / detalle_orden).</p>
+    </div>
     <a class="btn btn-light-blue" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">&larr; Volver a consulta</a>
 </div>
 
 <form asp-action="OrdenExamen" method="post" class="form-card document-form">
     <input asp-for="ConsultationId" type="hidden" />
-    <div class="form-card-header"><div><h2>Datos del examen</h2><p>La orden se guardará como pendiente.</p></div></div>
+    <input asp-for="DetalleOrdenId" type="hidden" />
+    <div class="form-card-header">
+        <div>
+            <h2>Detalle de la orden (detalle_orden)</h2>
+            <p>Esta orden quedará registrada para que en una próxima consulta se pueda registrar su estudio y lectura.</p>
+        </div>
+    </div>
     <div class="form-card-body">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-        <div class="mb-3"><label asp-for="ExamType" class="form-label"></label><input asp-for="ExamType" class="form-control" /><span asp-validation-for="ExamType" class="text-danger"></span></div>
-        <div><label asp-for="Instructions" class="form-label"></label><textarea asp-for="Instructions" class="form-control" rows="3"></textarea><span asp-validation-for="Instructions" class="text-danger"></span></div>
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label> <span class="text-danger">*</span>
+            <input asp-for="Nombre" class="form-control" placeholder="Ej. Hemograma completo, Radiografía de tórax..." />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+        <div>
+            <label asp-for="Indicaciones" class="form-label"></label>
+            <textarea asp-for="Indicaciones" class="form-control" rows="3" placeholder="Ej. Presentarse en ayunas de 8 horas..."></textarea>
+            <span asp-validation-for="Indicaciones" class="text-danger"></span>
+        </div>
     </div>
-    <div class="form-card-footer"><a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a><button class="btn btn-primary" type="submit">Guardar orden</button></div>
+    <div class="form-card-footer">
+        <a class="btn btn-outline-secondary" asp-controller="Consultas" asp-action="Atender" asp-route-id="@Model.ConsultationId">Cancelar</a>
+        <button class="btn btn-primary" type="submit">@(esEdicion ? "Guardar cambios" : "Guardar orden")</button>
+    </div>
 </form>
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -49,7 +49,7 @@ namespace ClinicaApp.Controllers
             }
 
             var patientId = await clinicData.CreatePatientAsync(modelo);
-            TempData["Mensaje"] = $"Paciente {modelo.NombreCompleto.Trim()} registrado correctamente.";
+            TempData["Mensaje"] = $"Paciente {modelo.Nombre.Trim()} registrado correctamente.";
             return RedirectToAction(nameof(Expediente), new { id = patientId });
         }
 
@@ -68,21 +68,56 @@ namespace ClinicaApp.Controllers
         [HttpPost]
         [Authorize(Roles = "Doctora")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AgregarAntecedente(AntecedentViewModel model)
+        public async Task<IActionResult> AgregarAlergia(AlergiaPacienteViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "Completa la categoría y descripción del antecedente.";
-                return RedirectToAction(nameof(Expediente), new { id = model.PatientId });
+                TempData["Error"] = "Completa el tipo de alergia, la sustancia/elemento y la severidad.";
+                return RedirectAfterPatientUpdate(model.PatientId, model.ConsultationId);
             }
 
-            if (!await clinicData.AddAntecedentAsync(model))
+            if (!await clinicData.AddAlergiaAsync(model))
             {
                 return NotFound();
             }
 
-            TempData["Mensaje"] = "El antecedente médico se agregó al expediente.";
-            return RedirectToAction(nameof(Expediente), new { id = model.PatientId });
+            TempData["Mensaje"] = "La alergia se registró en el expediente del paciente.";
+            return RedirectAfterPatientUpdate(model.PatientId, model.ConsultationId);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Doctora")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarEnfermedad(EnfermedadViewModel model)
+        {
+            if (model.AnioDiagnostico > DateTime.Today.Year)
+            {
+                ModelState.AddModelError(nameof(model.AnioDiagnostico), "El año de diagnóstico no puede ser futuro.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Completa el nombre de la enfermedad y un año de diagnóstico válido.";
+                return RedirectAfterPatientUpdate(model.PatientId, model.ConsultationId);
+            }
+
+            if (!await clinicData.AddEnfermedadAsync(model))
+            {
+                return NotFound();
+            }
+
+            TempData["Mensaje"] = "La enfermedad se registró en el expediente del paciente.";
+            return RedirectAfterPatientUpdate(model.PatientId, model.ConsultationId);
+        }
+
+        private IActionResult RedirectAfterPatientUpdate(int patientId, int? consultationId)
+        {
+            if (consultationId.HasValue)
+            {
+                return RedirectToAction("Atender", "Consultas", new { id = consultationId.Value });
+            }
+
+            return RedirectToAction(nameof(Expediente), new { id = patientId });
         }
     }
 }

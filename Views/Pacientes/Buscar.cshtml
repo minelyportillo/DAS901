@@ -8,7 +8,7 @@
     <div>
         <p class="page-kicker">PACIENTES</p>
         <h1>Expedientes</h1>
-        <p class="page-subtitle">Busca por nombre o número de teléfono.</p>
+        <p class="page-subtitle">Busca por nombre o número de DUI.</p>
     </div>
     @if (User.IsInRole("Secretaria"))
     {
@@ -17,9 +17,9 @@
 </div>
 
 <form asp-action="Buscar" method="get" class="patient-search-form">
-    <label class="visually-hidden" for="termino">Nombre o teléfono</label>
+    <label class="visually-hidden" for="termino">Nombre o DUI</label>
     <input id="termino" name="termino" value="@Model.Term" class="form-control"
-           placeholder="Buscar nombre o teléfono..." autocomplete="off" />
+           placeholder="Buscar por nombre o DUI..." autocomplete="off" />
     <button class="btn btn-primary" type="submit">Buscar</button>
 </form>
 
@@ -35,7 +35,7 @@
     {
         <div class="empty-state">
             <h2>No se encontraron pacientes</h2>
-            <p>Prueba con otro nombre o teléfono.@(User.IsInRole("Secretaria") ? " También puedes registrar un expediente nuevo." : "")</p>
+            <p>Prueba con otro nombre o DUI.@(User.IsInRole("Secretaria") ? " También puedes registrar un expediente nuevo." : "")</p>
             @if (User.IsInRole("Secretaria"))
             {
                 <a class="btn btn-primary" asp-action="Registrar">Registrar paciente</a>
@@ -48,10 +48,10 @@
             @foreach (var patient in Model.Patients)
             {
                 <article class="user-row patient-row">
-                    <span class="user-avatar" aria-hidden="true">@patient.Name[..1].ToUpperInvariant()</span>
+                    <span class="user-avatar" aria-hidden="true">@patient.Nombre[..1].ToUpperInvariant()</span>
                     <div class="user-details">
-                        <strong>@patient.Name</strong>
-                        <span>@patient.Phone · @patient.Age años</span>
+                        <strong>@patient.Nombre</strong>
+                        <span>DUI: @(string.IsNullOrWhiteSpace(patient.Dui) ? "No registrado" : patient.Dui) · @patient.Age años · Nac.: @patient.FechaNacimiento.ToString("dd/MM/yyyy")</span>
                     </div>
                     <a class="btn btn-light-blue btn-sm" asp-action="Expediente" asp-route-id="@patient.Id">Ver expediente</a>
                     @if (User.IsInRole("Secretaria"))

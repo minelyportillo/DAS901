@@ -7,12 +7,14 @@ public sealed class ExamOrderViewModel
     [Required]
     public int ConsultationId { get; set; }
 
-    [Required(ErrorMessage = "El examen solicitado es obligatorio.")]
-    [StringLength(150)]
-    [Display(Name = "Examen solicitado")]
-    public string ExamType { get; set; } = string.Empty;
+    public int? DetalleOrdenId { get; set; }
 
-    [StringLength(300)]
+    [Required(ErrorMessage = "El nombre del examen es obligatorio.")]
+    [StringLength(150)]
+    [Display(Name = "Nombre del examen")]
+    public string Nombre { get; set; } = string.Empty;
+
+    [StringLength(1000)]
     [Display(Name = "Indicaciones")]
-    public string? Instructions { get; set; }
+    public string? Indicaciones { get; set; }
 }

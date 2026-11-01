@@ -7,12 +7,18 @@ public sealed class IncapacityViewModel
     [Required]
     public int ConsultationId { get; set; }
 
-    [Range(1, 365, ErrorMessage = "Los días de reposo deben estar entre 1 y 365.")]
-    [Display(Name = "Días de reposo")]
-    public int Days { get; set; } = 1;
+    [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
+    [DataType(DataType.Date)]
+    [Display(Name = "Fecha de inicio")]
+    public DateTime FechaInicio { get; set; } = DateTime.Today;
 
-    [Required(ErrorMessage = "La justificación médica es obligatoria.")]
-    [StringLength(500)]
-    [Display(Name = "Justificación")]
-    public string Justification { get; set; } = string.Empty;
+    [Required(ErrorMessage = "La fecha de fin es obligatoria.")]
+    [DataType(DataType.Date)]
+    [Display(Name = "Fecha de fin")]
+    public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(1);
+
+    [Required(ErrorMessage = "El motivo de la incapacidad es obligatorio.")]
+    [StringLength(1000)]
+    [Display(Name = "Motivo")]
+    public string Motivo { get; set; } = string.Empty;
 }

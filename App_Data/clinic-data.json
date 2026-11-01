@@ -2,75 +2,247 @@
   "Patients": [
     {
       "Id": 1,
-      "Name": "Daniel Portillo",
-      "DateOfBirth": "2005-06-03T00:00:00",
-      "Phone": "72829934",
-      "Allergies": null,
-      "RegisteredAt": "2026-10-17T16:49:05.946465-06:00",
-      "Antecedents": [],
-      "Consultations": []
-    },
-    {
-      "Id": 2,
-      "Name": "Jose",
-      "DateOfBirth": "2008-10-17T00:00:00",
-      "Phone": "71041121",
-      "Allergies": "nada",
-      "RegisteredAt": "2026-10-17T17:55:43.2186194-06:00",
-      "Antecedents": [],
-      "Consultations": [
+      "Nombre": "Daniel Portillo",
+      "FechaNacimiento": "2005-06-03T00:00:00",
+      "Dui": "06543210-9",
+      "Alergias": [
         {
           "Id": 1,
-          "ArrivalTime": "2026-10-17T17:55:52.9977769-06:00",
-          "StartTime": "2026-10-17T17:57:54.3151002-06:00",
-          "CloseTime": "2026-10-17T18:06:06.2154496-06:00",
-          "Priority": 3,
-          "State": 3,
-          "Reason": "sadfafa",
-          "Symptoms": "asfasdfa",
-          "PhysicalEvaluation": "asdfa",
-          "Diagnosis": "asfda",
-          "ExamResults": "asdfasfasfaff",
-          "Vitals": {
-            "WeightKg": 80,
-            "HeightMeters": 1.65,
-            "Temperature": 38,
-            "BloodPressure": "120/80",
-            "HeartRate": 80,
-            "OxygenSaturation": 67
+          "IdPaciente": 1,
+          "TipoAlergia": "Medicamento",
+          "SustanciaElemento": "Penicilina",
+          "Severidad": "Severa"
+        },
+        {
+          "Id": 2,
+          "IdPaciente": 1,
+          "TipoAlergia": "Alimento",
+          "SustanciaElemento": "Cocacola",
+          "Severidad": "Moderada"
+        }
+      ],
+      "Enfermedades": [
+        {
+          "Id": 1,
+          "IdPaciente": 1,
+          "Nombre": "Asma bronquial",
+          "AnioDiagnostico": 2018
+        }
+      ],
+      "Consultations": [
+        {
+          "Id": 2,
+          "IdPaciente": 1,
+          "FechaHoraInicio": "2026-11-01T11:25:56.8070874-06:00",
+          "FechaHoraFinalizacion": "2026-11-01T11:54:26.2943699-06:00",
+          "Motivo": "asdfasdf",
+          "ExamenFisico": "asfdasf",
+          "Diagnostico": "asdfad",
+          "Prioridad": 3,
+          "Estado": 3,
+          "SignosVitales": {
+            "Id": 2,
+            "IdConsulta": 2,
+            "Temperatura": 38,
+            "Altura": 1.9,
+            "Peso": 80,
+            "PresionSistolica": 120,
+            "PresionDiastolica": 80,
+            "ConcentracionOxigeno": 98,
+            "RitmoCardiaco": 75
           },
-          "Prescriptions": [
-            {
-              "Id": 1,
-              "Medication": "asdfad",
-              "Concentration": "asdfa",
-              "Dose": "asdf",
-              "Duration": "asdfa"
-            },
+          "Recetas": [
             {
               "Id": 2,
-              "Medication": "asdf",
-              "Concentration": "asdfd",
-              "Dose": "asdf",
-              "Duration": "asdf"
+              "IdConsulta": 2,
+              "Detalles": [
+                {
+                  "Id": 2,
+                  "IdReceta": 2,
+                  "IdMedicamento": 9,
+                  "NombreMedicamento": "Cetrizina",
+                  "Dosis": "1 tableta",
+                  "Frecuencia": "8 horas",
+                  "Duracion": "7 dias",
+                  "Indicaciones": "dsafdfafff"
+                },
+                {
+                  "Id": 3,
+                  "IdReceta": 2,
+                  "IdMedicamento": 6,
+                  "NombreMedicamento": "Azitromicina 500 mg",
+                  "Dosis": "1 tableta",
+                  "Frecuencia": "cada 8 horas",
+                  "Duracion": "7 dias",
+                  "Indicaciones": "lasjkldfakslfslkf"
+                }
+              ]
             }
           ],
-          "Incapacity": {
-            "Days": 1,
-            "Justification": "salkdjflkasjfklj",
-            "IssuedAt": "2026-10-17T17:59:25.5496904-06:00"
+          "Incapacidad": {
+            "Id": 2,
+            "IdConsulta": 2,
+            "FechaInicio": "2026-11-01T00:00:00",
+            "FechaFin": "2026-11-02T00:00:00",
+            "Motivo": "hola",
+            "DiasCalculados": 2
           },
-          "ExamOrders": [
+          "Ordenes": [
             {
-              "Id": 1,
-              "ExamType": "asdfa",
-              "Instructions": "asdfa",
-              "RequestedAt": "2026-10-17T17:59:06.4008512-06:00",
-              "State": 1
+              "Id": 2,
+              "ConsultaId": 2,
+              "FechaHoraEmision": "2026-11-01T11:32:16.2592896-06:00",
+              "Detalles": [
+                {
+                  "Id": 2,
+                  "IdOrden": 2,
+                  "Nombre": "lkkjsldkfflasfsd",
+                  "Indicaciones": "laksdjflkf"
+                },
+                {
+                  "Id": 3,
+                  "IdOrden": 2,
+                  "Nombre": "lsajdflkaf",
+                  "Indicaciones": "asfasf"
+                }
+              ]
             }
           ]
         }
+      ],
+      "Estudios": [
+        {
+          "Id": 1,
+          "IdPaciente": 1,
+          "IdDetalleOrden": null,
+          "IdConsultaLectura": 2,
+          "Nombre": "xd",
+          "Observaciones": "afadsfsf",
+          "Fecha": "2026-10-31T00:00:00"
+        }
       ]
+    },
+    {
+      "Id": 2,
+      "Nombre": "Jose",
+      "FechaNacimiento": "2008-10-17T00:00:00",
+      "Dui": null,
+      "Alergias": [],
+      "Enfermedades": [],
+      "Consultations": [
+        {
+          "Id": 1,
+          "IdPaciente": 2,
+          "FechaHoraInicio": "2026-10-17T17:55:52",
+          "FechaHoraFinalizacion": "2026-10-17T18:06:06",
+          "Motivo": "Cefalea y fiebre de dos d\u00EDas de evoluci\u00F3n",
+          "ExamenFisico": "Orofaringe hiper\u00E9mica sin exudados",
+          "Diagnostico": "Faringoamigdalitis aguda",
+          "Prioridad": 3,
+          "Estado": 3,
+          "SignosVitales": {
+            "Id": 1,
+            "IdConsulta": 1,
+            "Temperatura": 38,
+            "Altura": 1.65,
+            "Peso": 80,
+            "PresionSistolica": 120,
+            "PresionDiastolica": 80,
+            "ConcentracionOxigeno": 98,
+            "RitmoCardiaco": 80
+          },
+          "Recetas": [
+            {
+              "Id": 1,
+              "IdConsulta": 1,
+              "Detalles": [
+                {
+                  "Id": 1,
+                  "IdReceta": 1,
+                  "IdMedicamento": 1,
+                  "NombreMedicamento": "Paracetamol 500 mg",
+                  "Dosis": "1 tableta",
+                  "Frecuencia": "Cada 8 horas",
+                  "Duracion": "5 d\u00EDas",
+                  "Indicaciones": "Tomar despu\u00E9s de las comidas"
+                }
+              ]
+            }
+          ],
+          "Incapacidad": {
+            "Id": 1,
+            "IdConsulta": 1,
+            "FechaInicio": "2026-10-17T00:00:00",
+            "FechaFin": "2026-10-18T00:00:00",
+            "Motivo": "Reposo m\u00E9dico por cuadro febril agudo",
+            "DiasCalculados": 2
+          },
+          "Ordenes": [
+            {
+              "Id": 1,
+              "ConsultaId": 1,
+              "FechaHoraEmision": "2026-10-17T17:59:06",
+              "Detalles": [
+                {
+                  "Id": 1,
+                  "IdOrden": 1,
+                  "Nombre": "Hemograma completo",
+                  "Indicaciones": "En ayunas"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Estudios": []
+    },
+    {
+      "Id": 3,
+      "Nombre": "Jose",
+      "FechaNacimiento": "2008-11-01T00:00:00",
+      "Dui": "07681526-1",
+      "Alergias": [],
+      "Enfermedades": [],
+      "Consultations": [],
+      "Estudios": []
+    }
+  ],
+  "Medicamentos": [
+    {
+      "Id": 1,
+      "Nombre": "Paracetamol 500 mg"
+    },
+    {
+      "Id": 2,
+      "Nombre": "Ibuprofeno 400 mg"
+    },
+    {
+      "Id": 3,
+      "Nombre": "Amoxicilina 500 mg"
+    },
+    {
+      "Id": 4,
+      "Nombre": "Omeprazol 20 mg"
+    },
+    {
+      "Id": 5,
+      "Nombre": "Loratadina 10 mg"
+    },
+    {
+      "Id": 6,
+      "Nombre": "Azitromicina 500 mg"
+    },
+    {
+      "Id": 7,
+      "Nombre": "Losart\u00E1n 50 mg"
+    },
+    {
+      "Id": 8,
+      "Nombre": "Metformina 850 mg"
+    },
+    {
+      "Id": 9,
+      "Nombre": "Cetrizina"
     }
   ]
 }

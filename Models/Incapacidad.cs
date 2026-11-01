@@ -4,26 +4,30 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClinicaApp.Models
 {
-    [Table("Incapacidades")]
+    [Table("incapacidades")]
     public class Incapacidad
     {
         [Key]
-        public int IdIncapacidad { get; set; }
+        [Column("id")]
+        public int Id { get; set; }
 
         [Required]
+        [Column("id_consulta")]
         public int IdConsulta { get; set; }
 
         [Required]
-        [Range(1, 365)]
-        public int DiasReposo { get; set; }
+        [Column("fecha_inicio", TypeName = "date")]
+        public DateTime FechaInicio { get; set; }
 
         [Required]
-        [StringLength(500)]
-        public string Justificacion { get; set; } = string.Empty;
+        [Column("fecha_fin", TypeName = "date")]
+        public DateTime FechaFin { get; set; }
 
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        [Required]
+        [Column("motivo", TypeName = "nvarchar(max)")]
+        public string Motivo { get; set; } = string.Empty;
 
-        [ForeignKey("IdConsulta")]
+        [ForeignKey(nameof(IdConsulta))]
         public virtual Consulta Consulta { get; set; } = null!;
     }
 }

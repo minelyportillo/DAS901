@@ -8,7 +8,7 @@
     <div>
         <p class="page-kicker">PACIENTES</p>
         <h1>Registrar paciente</h1>
-        <p class="page-subtitle">Completa los datos básicos para crear un expediente nuevo.</p>
+        <p class="page-subtitle">Completa los datos básicos de identificación para crear un expediente nuevo.</p>
     </div>
     <a class="btn btn-light-blue" asp-controller="Home" asp-action="Index">&larr; Volver al inicio</a>
 </div>
@@ -19,7 +19,7 @@
             <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6" /></svg>
         </span>
         <h2>Datos del paciente</h2>
-        <p>Ingresa la información personal y de contacto. Los campos marcados son necesarios para crear el expediente.</p>
+        <p>Registra el nombre, la fecha de nacimiento y opcionalmente el DUI del paciente. Las alergias y enfermedades se gestionan directamente en el expediente clínico.</p>
         <div class="form-note">
             <span aria-hidden="true">i</span>
             <p>La edad se calculará automáticamente a partir de la fecha de nacimiento.</p>
@@ -30,62 +30,32 @@
         <div class="form-card-header">
             <div>
                 <h2>Información personal</h2>
-                <p>Datos generales y de contacto</p>
+                <p>Tabla: pacientes</p>
             </div>
             <span class="required-note"><span aria-hidden="true">*</span> Obligatorio</span>
         </div>
         <div class="form-card-body">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
-                <div class="row g-3">
-                    <div class="col-12">
-                        @Html.LabelFor(model => model.NombreCompleto, new { @class = "form-label" })
-                    @Html.TextBoxFor(model => model.NombreCompleto, new
-                    {
-                        @class = "form-control",
-                        autocomplete = "name",
-                        maxlength = "150",
-                        placeholder = "Ej. María Fernanda López"
-                    })
-                    @Html.ValidationMessageFor(model => model.NombreCompleto, "", new { @class = "text-danger" })
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="Nombre" class="form-label"></label> <span class="text-danger">*</span>
+                    <input asp-for="Nombre" class="form-control" autocomplete="name" maxlength="150" placeholder="Ej. María Fernanda López" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
                 </div>
 
-                    <div class="col-md-6">
-                    @Html.LabelFor(model => model.FechaNacimiento, new { @class = "form-label" })
-                    @Html.TextBoxFor(model => model.FechaNacimiento, "{0:yyyy-MM-dd}", new
-                    {
-                        @class = "form-control",
-                        type = "date",
-                        max = DateTime.Today.ToString("yyyy-MM-dd"),
-                        id = "fechaNacimiento"
-                    })
-                    @Html.ValidationMessageFor(model => model.FechaNacimiento, "", new { @class = "text-danger" })
+                <div class="col-md-6">
+                    <label asp-for="FechaNacimiento" class="form-label"></label> <span class="text-danger">*</span>
+                    <input asp-for="FechaNacimiento" class="form-control" type="date" max="@DateTime.Today.ToString("yyyy-MM-dd")" id="fechaNacimiento" />
+                    <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
                     <div class="form-text" id="edadCalculada" aria-live="polite"></div>
                 </div>
 
-                    <div class="col-md-6">
-                    @Html.LabelFor(model => model.Telefono, new { @class = "form-label" })
-                    @Html.TextBoxFor(model => model.Telefono, new
-                    {
-                        @class = "form-control",
-                        type = "tel",
-                        autocomplete = "tel",
-                        inputmode = "tel",
-                        maxlength = "9",
-                        placeholder = "7123-4567"
-                    })
-                    @Html.ValidationMessageFor(model => model.Telefono, "", new { @class = "text-danger" })
-                </div>
-
-                    <div class="col-12">
-                    @Html.LabelFor(model => model.Alergias, new { @class = "form-label" })
-                    @Html.TextAreaFor(model => model.Alergias, 3, 0, new
-                    {
-                        @class = "form-control",
-                        maxlength = "500",
-                        placeholder = "Especifica alergias conocidas, si las hay"
-                    })
-                    @Html.ValidationMessageFor(model => model.Alergias, "", new { @class = "text-danger" })
+                <div class="col-md-6">
+                    <label asp-for="Dui" class="form-label"></label>
+                    <input asp-for="Dui" class="form-control" maxlength="10" placeholder="01234567-8 (opcional)" />
+                    <span asp-validation-for="Dui" class="text-danger"></span>
+                    <div class="form-text">Déjalo vacío si el paciente es menor de edad o no presenta DUI.</div>
                 </div>
             </div>
         </div>
@@ -93,7 +63,7 @@
         <div class="form-card-footer">
             <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Index">Cancelar</a>
             <button type="submit" class="btn btn-primary">Guardar paciente</button>
-            </div>
+        </div>
     </form>
 </div>
 

@@ -983,6 +983,10 @@ a.action-card:hover {
   background: #fff;
 }
 
+.clinical-detail .vitals-grid {
+  margin: 14px 0 20px;
+}
+
 .vitals-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));

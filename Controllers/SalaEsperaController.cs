@@ -72,10 +72,10 @@ public sealed class SalaEsperaController(ClinicDataStore clinicData) : Controlle
         {
             ConsultationId = id,
             PatientName = consultation.PatientName,
-            WeightKg = consultation.WeightKg,
-            HeightMeters = consultation.HeightMeters,
-            Temperature = consultation.Temperature,
-            Priority = consultation.Priority
+            Peso = consultation.Peso,
+            Altura = consultation.Altura,
+            Temperatura = consultation.Temperatura,
+            Prioridad = consultation.Priority
         });
     }
 
@@ -102,7 +102,7 @@ public sealed class SalaEsperaController(ClinicDataStore clinicData) : Controlle
             return NotFound();
         }
 
-        TempData["Mensaje"] = "Los signos vitales quedaron registrados.";
+        TempData["Mensaje"] = "Los signos vitales iniciales quedaron registrados.";
         return RedirectToAction(nameof(Index));
     }
 }

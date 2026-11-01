@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using ClinicaApp.Services;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ClinicaApp.ViewModels;
 
@@ -7,23 +9,31 @@ public sealed class PrescriptionViewModel
     [Required]
     public int ConsultationId { get; set; }
 
-    [Required(ErrorMessage = "El medicamento es obligatorio.")]
-    [StringLength(150)]
-    [Display(Name = "Medicamento")]
-    public string Medication { get; set; } = string.Empty;
+    public int? DetalleId { get; set; }
 
-    [Required(ErrorMessage = "La concentración es obligatoria.")]
-    [StringLength(50)]
-    [Display(Name = "Concentración")]
-    public string Concentration { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Selecciona un medicamento del catálogo.")]
+    [Display(Name = "Medicamento")]
+    public int? IdMedicamento { get; set; }
 
     [Required(ErrorMessage = "La dosis es obligatoria.")]
     [StringLength(100)]
     [Display(Name = "Dosis")]
-    public string Dose { get; set; } = string.Empty;
+    public string Dosis { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "La frecuencia es obligatoria.")]
+    [StringLength(100)]
+    [Display(Name = "Frecuencia")]
+    public string Frecuencia { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "La duración es obligatoria.")]
-    [StringLength(50)]
+    [StringLength(100)]
     [Display(Name = "Duración")]
-    public string Duration { get; set; } = string.Empty;
+    public string Duracion { get; set; } = string.Empty;
+
+    [StringLength(1000)]
+    [Display(Name = "Indicaciones")]
+    public string? Indicaciones { get; set; }
+
+    [ValidateNever]
+    public IReadOnlyList<ClinicDataStore.MedicamentoRecord> CatalogoMedicamentos { get; set; } = [];
 }

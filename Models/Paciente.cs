@@ -5,28 +5,25 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClinicaApp.Models
 {
-    [Table("Pacientes")]
+    [Table("pacientes")]
     public class Paciente
     {
         [Key]
-        public int IdPaciente { get; set; }
+        [Column("id")]
+        public int Id { get; set; }
 
         [Required]
         [StringLength(150)]
-        public string NombreCompleto { get; set; } = string.Empty;
+        [Column("nombre")]
+        public string Nombre { get; set; } = string.Empty;
 
         [Required]
-        [Column(TypeName = "date")]
+        [Column("fecha_nacimiento", TypeName = "date")]
         public DateTime FechaNacimiento { get; set; }
 
-        [Required]
-        [StringLength(20)]
-        public string Telefono { get; set; } = string.Empty;
-
-        [StringLength(500)]
-        public string? Alergias { get; set; }
-
-        public DateTime FechaRegistro { get; set; } = DateTime.Now;
+        [StringLength(10)]
+        [Column("DUI")]
+        public string? Dui { get; set; }
 
         // Propiedad calculada en memoria (no genera columna en la base de datos)
         [NotMapped]
@@ -41,8 +38,10 @@ namespace ClinicaApp.Models
             }
         }
 
-        // Propiedades de navegación hacia las demás entidades
+        // Propiedades de navegación
+        public virtual ICollection<Enfermedad> Enfermedades { get; set; } = new List<Enfermedad>();
+        public virtual ICollection<AlergiaPaciente> Alergias { get; set; } = new List<AlergiaPaciente>();
         public virtual ICollection<Consulta> Consultas { get; set; } = new List<Consulta>();
-        public virtual ICollection<AntecedenteMedico> Antecedentes { get; set; } = new List<AntecedenteMedico>();
+        public virtual ICollection<Estudio> Estudios { get; set; } = new List<Estudio>();
     }
 }

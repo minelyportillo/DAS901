@@ -42,22 +42,26 @@
                 <div class="queue-patient">
                     <strong>@item.PatientName</strong>
                     <span>
-                        @(item.State == EstadoConsulta.Esperando ? $"Llegó a las {item.ArrivalTime:HH:mm}" : $"Consulta iniciada a las {item.StartTime:HH:mm}")
+                        @(item.State == EstadoConsulta.Esperando ? $"Registrado a las {item.StartTime:HH:mm}" : $"En consulta desde las {item.StartTime:HH:mm}")
                         · @item.Age años
+                        @if (!string.IsNullOrWhiteSpace(item.Dui))
+                        {
+                            <text> · DUI: @item.Dui</text>
+                        }
                     </span>
                 </div>
                 <div class="queue-vitals">
-                    @if (item.WeightKg.HasValue)
+                    @if (item.Peso.HasValue)
                     {
-                        <span><small>PESO</small>@item.WeightKg.Value.ToString("0.#") kg</span>
+                        <span><small>PESO</small>@item.Peso.Value.ToString("0.#") kg</span>
                     }
-                    @if (item.HeightMeters.HasValue)
+                    @if (item.Altura.HasValue)
                     {
-                        <span><small>ALTURA</small>@item.HeightMeters.Value.ToString("0.00") m</span>
+                        <span><small>ALTURA</small>@item.Altura.Value.ToString("0.00") m</span>
                     }
-                    @if (item.Temperature.HasValue)
+                    @if (item.Temperatura.HasValue)
                     {
-                        <span><small>TEMP.</small>@item.Temperature.Value.ToString("0.0") °C</span>
+                        <span><small>TEMP.</small>@item.Temperatura.Value.ToString("0.0") °C</span>
                     }
                 </div>
                 @if (item.Priority == PrioridadAtencion.Alta)
@@ -79,7 +83,7 @@
                 {
                     <div class="queue-actions">
                         <a class="btn btn-light-blue btn-sm" asp-action="SignosVitales" asp-route-id="@item.ConsultationId">
-                            @(item.WeightKg.HasValue ? "Editar triaje" : "Registrar triaje")
+                            @(item.Peso.HasValue ? "Editar triaje" : "Registrar triaje")
                         </a>
                         <form asp-action="AsignarPrioridad" method="post" class="priority-form">
                             <input type="hidden" name="consultaId" value="@item.ConsultationId" />

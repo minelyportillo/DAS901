@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = "Imprimir documentos";
     var consultation = Model.Consultation;
+    var vitals = consultation.SignosVitales;
+    var recetasDetalles = consultation.Recetas.SelectMany(r => r.Detalles).ToArray();
+    var ordenesDetalles = consultation.Ordenes.SelectMany(o => o.Detalles).ToArray();
 }
 
 <div class="print-toolbar">
@@ -13,59 +16,84 @@
 <article class="print-document">
     <header class="print-header">
         <div class="print-clinic-mark" aria-hidden="true">+</div>
-        <div><p class="page-kicker">SISTEMA DE GESTIÓN CLÍNICA</p><h1>Resumen de atención</h1><p>Consulta del @((consultation.CloseTime ?? consultation.ArrivalTime).ToString("dd/MM/yyyy"))</p></div>
+        <div>
+            <p class="page-kicker">SISTEMA DE GESTIÓN CLÍNICA</p>
+            <h1>Resumen de atención</h1>
+            <p>Consulta del @((consultation.FechaHoraFinalizacion ?? consultation.FechaHoraInicio).ToString("dd/MM/yyyy"))</p>
+        </div>
     </header>
 
     <section class="print-patient">
-        <h2>@Model.Patient.Name</h2>
-        <p>@Model.Patient.Age años · Teléfono: @Model.Patient.Phone · Fecha de nacimiento: @Model.Patient.DateOfBirth.ToString("dd/MM/yyyy")</p>
+        <h2>@Model.Patient.Nombre</h2>
+        <p>
+            @Model.Patient.Age años ·
+            DUI: @(string.IsNullOrWhiteSpace(Model.Patient.Dui) ? "No registrado" : Model.Patient.Dui) ·
+            Fecha de nacimiento: @Model.Patient.FechaNacimiento.ToString("dd/MM/yyyy")
+        </p>
     </section>
 
     <section class="print-section">
         <h2>Consulta</h2>
-        <p><strong>Motivo:</strong> @(consultation.Reason ?? "Sin registro")</p>
-        <p><strong>Síntomas:</strong> @(consultation.Symptoms ?? "Sin registro")</p>
-        <p><strong>Exploración física:</strong> @(consultation.PhysicalEvaluation ?? "Sin registro")</p>
-        <p><strong>Diagnóstico:</strong> @(consultation.Diagnosis ?? "Sin registro")</p>
-        <p><strong>Resultados:</strong> @(consultation.ExamResults ?? "Sin registro")</p>
+        <p><strong>Motivo:</strong> @(consultation.Motivo ?? "Sin registro")</p>
+        <p><strong>Examen físico:</strong> @(consultation.ExamenFisico ?? "Sin registro")</p>
+        <p><strong>Diagnóstico:</strong> @(consultation.Diagnostico ?? "Sin registro")</p>
     </section>
 
     <section class="print-section">
         <h2>Signos vitales</h2>
         <p>
-            Peso: @(consultation.Vitals?.WeightKg?.ToString("0.#") ?? "—") kg ·
-            Altura: @(consultation.Vitals?.HeightMeters?.ToString("0.00") ?? "—") m ·
-            Temperatura: @(consultation.Vitals?.Temperature?.ToString("0.0") ?? "—") °C ·
-            Presión: @(consultation.Vitals?.BloodPressure ?? "—") ·
-            Frecuencia cardíaca: @(consultation.Vitals?.HeartRate?.ToString() ?? "—") lpm ·
-            Saturación: @(consultation.Vitals?.OxygenSaturation?.ToString() ?? "—") %
+            Peso: @(vitals?.Peso?.ToString("0.#") ?? "—") kg ·
+            Altura: @(vitals?.Altura?.ToString("0.00") ?? "—") m ·
+            Temperatura: @(vitals?.Temperatura?.ToString("0.0") ?? "—") °C ·
+            Presión arterial: @(vitals?.PresionSistolica is not null && vitals?.PresionDiastolica is not null ? $"{vitals.PresionSistolica}/{vitals.PresionDiastolica} mmHg" : "—") ·
+            Ritmo cardíaco: @(vitals?.RitmoCardiaco?.ToString() ?? "—") lpm ·
+            Concentración O₂: @(vitals?.ConcentracionOxigeno?.ToString() ?? "—") %
         </p>
     </section>
 
     <section class="print-section">
         <h2>Receta médica</h2>
-        @if (consultation.Prescriptions.Count == 0) { <p>Sin medicamentos prescritos.</p> }
-        @foreach (var item in consultation.Prescriptions)
+        @if (recetasDetalles.Length == 0) { <p>Sin medicamentos prescritos.</p> }
+        @foreach (var item in recetasDetalles)
         {
-            <p><strong>@item.Medication @item.Concentration</strong> — @item.Dose durante @item.Duration.</p>
+            <p>
+                <strong>@item.NombreMedicamento</strong> — Dosis: @item.Dosis · Frecuencia: @item.Frecuencia · Duración: @item.Duracion.
+                @if (!string.IsNullOrWhiteSpace(item.Indicaciones))
+                {
+                    <text> Indicaciones: @item.Indicaciones</text>
+                }
+            </p>
         }
     </section>
 
     <section class="print-section">
         <h2>Órdenes de examen</h2>
-        @if (consultation.ExamOrders.Count == 0) { <p>Sin exámenes solicitados.</p> }
-        @foreach (var item in consultation.ExamOrders)
+        @if (ordenesDetalles.Length == 0) { <p>Sin exámenes solicitados.</p> }
+        @foreach (var item in ordenesDetalles)
         {
-            <p><strong>@item.ExamType</strong> — @(item.Instructions ?? "Sin indicaciones") · Estado: @item.State.</p>
+            <p><strong>@item.Nombre</strong> — @(string.IsNullOrWhiteSpace(item.Indicaciones) ? "Sin indicaciones" : item.Indicaciones).</p>
         }
     </section>
 
-    @if (consultation.Incapacity is not null)
+    <section class="print-section">
+        <h2>Estudios leídos</h2>
+        @if (Model.EstudiosLeidos.Count == 0) { <p>Sin estudios leídos en esta consulta.</p> }
+        @foreach (var estudio in Model.EstudiosLeidos)
+        {
+            <p><strong>@estudio.NombreMostrar</strong> (@estudio.Fecha.ToString("dd/MM/yyyy")) — @estudio.Observaciones</p>
+        }
+    </section>
+
+    @if (consultation.Incapacidad is not null)
     {
         <section class="print-section">
-            <h2>Incapacidad</h2>
-            <p>@consultation.Incapacity.Days día(s) de reposo. @consultation.Incapacity.Justification</p>
-            <p>Emitida el @consultation.Incapacity.IssuedAt.ToString("dd/MM/yyyy").</p>
+            <h2>Incapacidad médica</h2>
+            <p>
+                Vigencia: del <strong>@consultation.Incapacidad.FechaInicio.ToString("dd/MM/yyyy")</strong>
+                al <strong>@consultation.Incapacidad.FechaFin.ToString("dd/MM/yyyy")</strong>
+                (@consultation.Incapacidad.DiasCalculados día(s) de reposo).
+            </p>
+            <p><strong>Motivo:</strong> @consultation.Incapacidad.Motivo</p>
         </section>
     }
 

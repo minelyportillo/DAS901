@@ -1,0 +1,47 @@
+@model ClinicaApp.ViewModels.MedicationViewModel
+
+@{
+    ViewData["Title"] = "Nuevo medicamento";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">CATÁLOGO DE MEDICAMENTOS · CONSULTA #@Model.ConsultationId</p>
+        <h1>Registrar nuevo medicamento</h1>
+        <p class="page-subtitle">Agrega un medicamento al catálogo general para poder seleccionarlo en las recetas (tabla medicamentos).</p>
+    </div>
+    <a class="btn btn-light-blue"
+       asp-action="Receta"
+       asp-route-consultaId="@Model.ConsultationId"
+       asp-route-detalleId="@Model.DetalleId">&larr; Volver a receta</a>
+</div>
+
+<form asp-action="NuevoMedicamento" method="post" class="form-card document-form">
+    <input asp-for="ConsultationId" type="hidden" />
+    <input asp-for="DetalleId" type="hidden" />
+    <div class="form-card-header">
+        <div>
+            <h2>Datos del medicamento (medicamentos)</h2>
+            <p>Al guardar, volverás automáticamente a la receta con este medicamento seleccionado.</p>
+        </div>
+    </div>
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div>
+            <label asp-for="Nombre" class="form-label"></label> <span class="text-danger">*</span>
+            <input asp-for="Nombre" class="form-control" maxlength="150" placeholder="Ej. Cetirizina 10 mg, Diclofenaco 50 mg..." autofocus />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-card-footer">
+        <a class="btn btn-outline-secondary"
+           asp-action="Receta"
+           asp-route-consultaId="@Model.ConsultationId"
+           asp-route-detalleId="@Model.DetalleId">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Guardar medicamento</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

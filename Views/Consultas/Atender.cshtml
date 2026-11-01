@@ -2,16 +2,113 @@
 
 @{
     ViewData["Title"] = "Consulta en curso";
-    var vitals = Model.Consultation.Vitals;
+    var vitals = Model.Consultation.SignosVitales;
+    var recetasDetalles = Model.Consultation.Recetas.SelectMany(r => r.Detalles).ToArray();
+    var ordenesDetalles = Model.Consultation.Ordenes.SelectMany(o => o.Detalles).ToArray();
 }
 
 <div class="page-heading">
     <div>
-        <p class="page-kicker">CONSULTA EN CURSO · @Model.Consultation.ArrivalTime.ToString("dd/MM/yyyy HH:mm")</p>
-        <h1>@Model.Patient.Name</h1>
-        <p class="page-subtitle">@Model.Patient.Age años · Consulta #@Model.ConsultationId · @Model.Patient.Phone</p>
+        <p class="page-kicker">CONSULTA EN CURSO · @Model.Consultation.FechaHoraInicio.ToString("dd/MM/yyyy HH:mm")</p>
+        <h1>@Model.Patient.Nombre</h1>
+        <p class="page-subtitle">
+            @Model.Patient.Age años · Consulta #@Model.ConsultationId
+            @if (!string.IsNullOrWhiteSpace(Model.Patient.Dui))
+            {
+                <text> · DUI: @Model.Patient.Dui</text>
+            }
+        </p>
     </div>
-    <span class="badge rounded-pill text-bg-primary">En atención</span>
+    <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-light-blue btn-sm" asp-controller="Pacientes" asp-action="Expediente" asp-route-id="@Model.Patient.Id">Ver expediente</a>
+        <span class="badge rounded-pill text-bg-primary">En atención</span>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <section class="info-card h-100">
+            <p class="card-eyebrow">ALERGIAS DEL PACIENTE (alergias_paciente)</p>
+            @if (Model.Alergias.Count == 0)
+            {
+                <p class="info-card-value mb-2">Sin alergias registradas</p>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    @foreach (var alergia in Model.Alergias)
+                    {
+                        <span class="history-tag">
+                            <strong>@alergia.TipoAlergia:</strong> @alergia.SustanciaElemento (@alergia.Severidad)
+                        </span>
+                    }
+                </div>
+            }
+            <form asp-controller="Pacientes" asp-action="AgregarAlergia" method="post" class="mt-2 pt-2 border-top">
+                <input type="hidden" name="PatientId" value="@Model.Patient.Id" />
+                <input type="hidden" name="ConsultationId" value="@Model.ConsultationId" />
+                <div class="row g-2">
+                    <div class="col-sm-4">
+                        <select name="TipoAlergia" class="form-select form-select-sm" required>
+                            <option value="">Tipo...</option>
+                            <option value="Medicamento">Medicamento</option>
+                            <option value="Alimento">Alimento</option>
+                            <option value="Ambiental">Ambiental</option>
+                            <option value="Contacto">Contacto</option>
+                            <option value="Otra">Otra</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-5">
+                        <input name="SustanciaElemento" class="form-control form-control-sm" maxlength="150" placeholder="Sustancia o elemento" required />
+                    </div>
+                    <div class="col-sm-3">
+                        <select name="Severidad" class="form-select form-select-sm" required>
+                            <option value="Leve">Leve</option>
+                            <option value="Moderada" selected>Moderada</option>
+                            <option value="Severa">Severa</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button class="btn btn-light-blue btn-sm" type="submit">+ Registrar alergia</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div class="col-md-6">
+        <section class="info-card h-100">
+            <p class="card-eyebrow">ENFERMEDADES CRÓNICAS / ANTECEDENTES (enfermedades)</p>
+            @if (Model.Enfermedades.Count == 0)
+            {
+                <p class="info-card-value mb-2">Sin enfermedades registradas</p>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    @foreach (var enf in Model.Enfermedades)
+                    {
+                        <span class="history-tag"><strong>@enf.Nombre</strong> · @enf.AnioDiagnostico</span>
+                    }
+                </div>
+            }
+            <form asp-controller="Pacientes" asp-action="AgregarEnfermedad" method="post" class="mt-2 pt-2 border-top">
+                <input type="hidden" name="PatientId" value="@Model.Patient.Id" />
+                <input type="hidden" name="ConsultationId" value="@Model.ConsultationId" />
+                <div class="row g-2">
+                    <div class="col-sm-8">
+                        <input name="Nombre" class="form-control form-control-sm" maxlength="150" placeholder="Nombre de la enfermedad" required />
+                    </div>
+                    <div class="col-sm-4">
+                        <input name="AnioDiagnostico" type="number" min="1900" max="@DateTime.Today.Year" value="@DateTime.Today.Year" class="form-control form-control-sm" placeholder="Año" required />
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button class="btn btn-light-blue btn-sm" type="submit">+ Registrar enfermedad</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
 </div>
 
 @if (Model.Previous is not null)
@@ -22,16 +119,16 @@
             <span class="step-pill">@(Model.Previous.ClosedAt?.ToString("dd/MM/yyyy") ?? "Historial")</span>
         </div>
         <div class="row g-3">
-            <div class="col-md-6"><p class="card-eyebrow">MOTIVO</p><p>@(Model.Previous.Reason ?? "Sin registro")</p></div>
-            <div class="col-md-6"><p class="card-eyebrow">DIAGNÓSTICO</p><p>@(Model.Previous.Diagnosis ?? "Sin registro")</p></div>
+            <div class="col-md-6"><p class="card-eyebrow">MOTIVO</p><p>@(Model.Previous.Motivo ?? "Sin registro")</p></div>
+            <div class="col-md-6"><p class="card-eyebrow">DIAGNÓSTICO</p><p>@(Model.Previous.Diagnostico ?? "Sin registro")</p></div>
         </div>
-        @if (Model.Previous.Prescriptions.Count > 0)
+        @if (Model.Previous.DetallesReceta.Count > 0)
         {
             <div class="previous-medicines">
                 <span class="card-eyebrow">MEDICAMENTOS PREVIOS</span>
-                @foreach (var prescription in Model.Previous.Prescriptions)
+                @foreach (var detalle in Model.Previous.DetallesReceta)
                 {
-                    <span class="history-tag">@prescription.Medication @prescription.Concentration · @prescription.Dose</span>
+                    <span class="history-tag">@detalle.NombreMedicamento · @detalle.Dosis (@detalle.Frecuencia)</span>
                 }
             </div>
         }
@@ -39,132 +136,241 @@
 }
 
 <section class="vitals-summary-card mb-4">
-    <div class="section-heading mb-2"><div><h2>Signos vitales</h2><p>Registrados durante el triaje</p></div></div>
+    <div class="section-heading mb-2"><div><h2>Signos vitales (signos_vitales)</h2><p>Valores actuales de la consulta</p></div></div>
     <div class="vitals-grid">
-        <div><small>PESO</small><strong>@(vitals?.WeightKg is null ? "—" : $"{vitals.WeightKg:0.#} kg")</strong></div>
-        <div><small>ALTURA</small><strong>@(vitals?.HeightMeters is null ? "—" : $"{vitals.HeightMeters:0.00} m")</strong></div>
-        <div><small>TEMPERATURA</small><strong>@(vitals?.Temperature is null ? "—" : $"{vitals.Temperature:0.0} °C")</strong></div>
-        <div><small>PRESIÓN</small><strong>@(vitals?.BloodPressure ?? "Pendiente")</strong></div>
-        <div><small>FRECUENCIA CARDÍACA</small><strong>@(vitals?.HeartRate is null ? "Pendiente" : $"{vitals.HeartRate} lpm")</strong></div>
-        <div><small>SATURACIÓN O₂</small><strong>@(vitals?.OxygenSaturation is null ? "Pendiente" : $"{vitals.OxygenSaturation} %")</strong></div>
+        <div><small>PESO</small><strong>@(vitals?.Peso is null ? "—" : $"{vitals.Peso:0.#} kg")</strong></div>
+        <div><small>ALTURA</small><strong>@(vitals?.Altura is null ? "—" : $"{vitals.Altura:0.00} m")</strong></div>
+        <div><small>TEMPERATURA</small><strong>@(vitals?.Temperatura is null ? "—" : $"{vitals.Temperatura:0.0} °C")</strong></div>
+        <div><small>PRESIÓN (SIST./DIAST.)</small><strong>@(vitals?.PresionSistolica is not null && vitals?.PresionDiastolica is not null ? $"{vitals.PresionSistolica}/{vitals.PresionDiastolica} mmHg" : "Pendiente")</strong></div>
+        <div><small>RITMO CARDÍACO</small><strong>@(vitals?.RitmoCardiaco is null ? "Pendiente" : $"{vitals.RitmoCardiaco} lpm")</strong></div>
+        <div><small>CONCENTRACIÓN O₂</small><strong>@(vitals?.ConcentracionOxigeno is null ? "Pendiente" : $"{vitals.ConcentracionOxigeno} %")</strong></div>
     </div>
 </section>
 
-<form asp-action="Atender" method="post" class="form-card">
+<form asp-action="Atender" method="post" class="form-card" id="formConsultaCurso">
     <input asp-for="ConsultationId" type="hidden" />
     <div class="form-card-header">
-        <div><h2>Registro clínico</h2><p>Guarda la información de esta atención antes de cerrarla.</p></div>
+        <div><h2>Registro clínico y signos vitales</h2><p>Guarda el motivo, examen físico, diagnóstico y signos vitales antes de finalizar la consulta.</p></div>
         <a class="btn btn-light-blue btn-sm" asp-controller="Documentos" asp-action="Imprimir" asp-route-id="@Model.ConsultationId" target="_blank">Vista imprimible</a>
     </div>
     <div class="form-card-body">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
         <div class="row g-3">
             <div class="col-12">
-                <label asp-for="Reason" class="form-label"></label>
-                <textarea asp-for="Reason" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="Reason" class="text-danger"></span>
+                <label asp-for="Motivo" class="form-label"></label> <span class="text-danger">*</span>
+                <textarea asp-for="Motivo" class="form-control" rows="2" placeholder="Motivo principal de la consulta..."></textarea>
+                <span asp-validation-for="Motivo" class="text-danger"></span>
             </div>
             <div class="col-12">
-                <label asp-for="Symptoms" class="form-label"></label>
-                <textarea asp-for="Symptoms" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="Symptoms" class="text-danger"></span>
+                <label asp-for="ExamenFisico" class="form-label"></label>
+                <textarea asp-for="ExamenFisico" class="form-control" rows="3" placeholder="Hallazgos durante la exploración física..."></textarea>
+                <span asp-validation-for="ExamenFisico" class="text-danger"></span>
             </div>
             <div class="col-12">
-                <label asp-for="PhysicalEvaluation" class="form-label"></label>
-                <textarea asp-for="PhysicalEvaluation" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="PhysicalEvaluation" class="text-danger"></span>
+                <label asp-for="Diagnostico" class="form-label"></label> <span class="text-danger">*</span>
+                <textarea asp-for="Diagnostico" class="form-control" rows="2" placeholder="Diagnóstico médico..."></textarea>
+                <span asp-validation-for="Diagnostico" class="text-danger"></span>
             </div>
-            <div class="col-12">
-                <label asp-for="Diagnosis" class="form-label"></label>
-                <textarea asp-for="Diagnosis" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="Diagnosis" class="text-danger"></span>
+
+            <div class="col-12 pt-2 border-top">
+                <p class="card-eyebrow mb-1">SIGNOS VITALES DE LA CONSULTA</p>
             </div>
-            <div class="col-md-6">
-                <label asp-for="BloodPressure" class="form-label"></label>
-                <input asp-for="BloodPressure" class="form-control" placeholder="120/80" />
-                <span asp-validation-for="BloodPressure" class="text-danger"></span>
+            <div class="col-md-4">
+                <label asp-for="Peso" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Peso" class="form-control" type="number" step="0.1" />
+                    <span class="input-group-text">kg</span>
+                </div>
+                <span asp-validation-for="Peso" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Altura" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Altura" class="form-control" type="number" step="0.01" />
+                    <span class="input-group-text">m</span>
+                </div>
+                <span asp-validation-for="Altura" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Temperatura" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Temperatura" class="form-control" type="number" step="0.1" />
+                    <span class="input-group-text">°C</span>
+                </div>
+                <span asp-validation-for="Temperatura" class="text-danger"></span>
             </div>
             <div class="col-md-3">
-                <label asp-for="HeartRate" class="form-label"></label>
-                <input asp-for="HeartRate" class="form-control" type="number" />
-                <span asp-validation-for="HeartRate" class="text-danger"></span>
+                <label asp-for="PresionSistolica" class="form-label"></label>
+                <input asp-for="PresionSistolica" class="form-control" type="number" placeholder="Ej. 120" />
+                <span asp-validation-for="PresionSistolica" class="text-danger"></span>
             </div>
             <div class="col-md-3">
-                <label asp-for="OxygenSaturation" class="form-label"></label>
-                <input asp-for="OxygenSaturation" class="form-control" type="number" />
-                <span asp-validation-for="OxygenSaturation" class="text-danger"></span>
+                <label asp-for="PresionDiastolica" class="form-label"></label>
+                <input asp-for="PresionDiastolica" class="form-control" type="number" placeholder="Ej. 80" />
+                <span asp-validation-for="PresionDiastolica" class="text-danger"></span>
             </div>
-            <div class="col-12">
-                <label asp-for="ExamResults" class="form-label"></label>
-                <textarea asp-for="ExamResults" class="form-control" rows="2"></textarea>
-                <span asp-validation-for="ExamResults" class="text-danger"></span>
+            <div class="col-md-3">
+                <label asp-for="RitmoCardiaco" class="form-label"></label>
+                <input asp-for="RitmoCardiaco" class="form-control" type="number" placeholder="Ej. 75" />
+                <span asp-validation-for="RitmoCardiaco" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="ConcentracionOxigeno" class="form-label"></label>
+                <input asp-for="ConcentracionOxigeno" class="form-control" type="number" placeholder="Ej. 98" />
+                <span asp-validation-for="ConcentracionOxigeno" class="text-danger"></span>
             </div>
         </div>
     </div>
     <div class="form-card-footer form-actions-wrap">
-        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="Receta" asp-route-consultaId="@Model.ConsultationId">Agregar medicamento</a>
-        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="OrdenExamen" asp-route-consultaId="@Model.ConsultationId">Agregar examen</a>
-        <a class="btn btn-light-blue" asp-controller="Documentos" asp-action="Incapacidad" asp-route-consultaId="@Model.ConsultationId">Incapacidad</a>
+        <button class="btn btn-light-blue cancel" type="submit" name="irA" value="Receta" formnovalidate>+ Medicamento (Receta)</button>
+        <button class="btn btn-light-blue cancel" type="submit" name="irA" value="OrdenExamen" formnovalidate>+ Orden de examen</button>
+        <button class="btn btn-light-blue cancel" type="submit" name="irA" value="Estudio" formnovalidate>+ Registrar estudio / lectura</button>
+        <button class="btn btn-light-blue cancel" type="submit" name="irA" value="Incapacidad" formnovalidate>Incapacidad</button>
         <button class="btn btn-primary" type="submit">Guardar consulta</button>
     </div>
 </form>
 
 <div class="row g-3 mt-1">
-    <div class="col-md-4">
-        <section class="document-summary-card">
-            <p class="card-eyebrow">RECETAS</p>
-            @if (Model.Consultation.Prescriptions.Count == 0)
+    <div class="col-md-6">
+        <section class="document-summary-card h-100">
+            <p class="card-eyebrow">RECETA MÉDICA (receta / detalle_receta)</p>
+            @if (recetasDetalles.Length == 0)
             {
-                <p>Sin medicamentos agregados.</p>
+                <p>Sin medicamentos agregados en esta consulta.</p>
             }
-            @foreach (var item in Model.Consultation.Prescriptions)
+            @foreach (var item in recetasDetalles)
             {
-                <p><strong>@item.Medication</strong> @item.Concentration · @item.Dose por @item.Duration</p>
-            }
-        </section>
-    </div>
-    <div class="col-md-4">
-        <section class="document-summary-card">
-            <p class="card-eyebrow">ÓRDENES DE EXAMEN</p>
-            @if (Model.Consultation.ExamOrders.Count == 0)
-            {
-                <p>Sin órdenes agregadas.</p>
-            }
-            @foreach (var item in Model.Consultation.ExamOrders)
-            {
-                <div class="document-order-row">
-                    <p><strong>@item.ExamType</strong> · @item.State</p>
-                    <form asp-controller="Documentos" asp-action="ActualizarEstadoExamen" method="post">
-                        <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
-                        <input type="hidden" name="ordenId" value="@item.Id" />
-                        <select name="estado" class="form-select form-select-sm" aria-label="Estado de @item.ExamType">
-                            <option value="@EstadoOrdenExamen.Pendiente" selected="@(item.State == EstadoOrdenExamen.Pendiente)">Pendiente</option>
-                            <option value="@EstadoOrdenExamen.Completado" selected="@(item.State == EstadoOrdenExamen.Completado)">Completado</option>
-                        </select>
-                        <button class="btn btn-light-blue btn-sm" type="submit">Actualizar</button>
-                    </form>
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                    <div>
+                        <p class="mb-0"><strong>@item.NombreMedicamento</strong> — Dosis: @item.Dosis · Frecuencia: @item.Frecuencia · Duración: @item.Duracion</p>
+                        @if (!string.IsNullOrWhiteSpace(item.Indicaciones))
+                        {
+                            <small class="text-muted">Indicaciones: @item.Indicaciones</small>
+                        }
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a class="btn btn-light-blue btn-sm"
+                           asp-controller="Documentos"
+                           asp-action="Receta"
+                           asp-route-consultaId="@Model.ConsultationId"
+                           asp-route-detalleId="@item.Id">Editar</a>
+                        <form asp-controller="Documentos" asp-action="EliminarDetalleReceta" method="post" onsubmit="return confirm('¿Eliminar este medicamento de la receta?');">
+                            <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
+                            <input type="hidden" name="detalleId" value="@item.Id" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
+                    </div>
                 </div>
             }
         </section>
     </div>
-    <div class="col-md-4">
-        <section class="document-summary-card">
-            <p class="card-eyebrow">INCAPACIDAD</p>
-            @if (Model.Consultation.Incapacity is null)
+
+    <div class="col-md-6">
+        <section class="document-summary-card h-100">
+            <p class="card-eyebrow">INCAPACIDAD (incapacidades)</p>
+            @if (Model.Consultation.Incapacidad is null)
             {
-                <p>Sin incapacidad registrada.</p>
+                <p>Sin incapacidad registrada en esta consulta.</p>
             }
             else
             {
-                <p><strong>@Model.Consultation.Incapacity.Days día(s) de reposo</strong></p>
-                <p>@Model.Consultation.Incapacity.Justification</p>
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <p class="mb-1">
+                            <strong>Del @Model.Consultation.Incapacidad.FechaInicio.ToString("dd/MM/yyyy") al @Model.Consultation.Incapacidad.FechaFin.ToString("dd/MM/yyyy")</strong>
+                            (@Model.Consultation.Incapacidad.DiasCalculados día(s))
+                        </p>
+                        <p class="mb-0">Motivo: @Model.Consultation.Incapacidad.Motivo</p>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a class="btn btn-light-blue btn-sm"
+                           asp-controller="Documentos"
+                           asp-action="Incapacidad"
+                           asp-route-consultaId="@Model.ConsultationId">Editar</a>
+                        <form asp-controller="Documentos" asp-action="EliminarIncapacidad" method="post" onsubmit="return confirm('¿Eliminar la incapacidad de esta consulta?');">
+                            <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </section>
+    </div>
+
+    <div class="col-md-6">
+        <section class="document-summary-card h-100">
+            <p class="card-eyebrow">ÓRDENES EMITIDAS EN ESTA CONSULTA (ordenes / detalle_orden)</p>
+            @if (ordenesDetalles.Length == 0)
+            {
+                <p>Sin órdenes emitidas en esta consulta.</p>
+            }
+            @foreach (var item in ordenesDetalles)
+            {
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                    <div>
+                        <p class="mb-0"><strong>@item.Nombre</strong></p>
+                        @if (!string.IsNullOrWhiteSpace(item.Indicaciones))
+                        {
+                            <small class="text-muted">@item.Indicaciones</small>
+                        }
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a class="btn btn-light-blue btn-sm"
+                           asp-controller="Documentos"
+                           asp-action="OrdenExamen"
+                           asp-route-consultaId="@Model.ConsultationId"
+                           asp-route-detalleOrdenId="@item.Id">Editar</a>
+                        <form asp-controller="Documentos" asp-action="EliminarDetalleOrden" method="post" onsubmit="return confirm('¿Eliminar esta orden de examen?');">
+                            <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
+                            <input type="hidden" name="detalleOrdenId" value="@item.Id" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </section>
+    </div>
+
+    <div class="col-md-6">
+        <section class="document-summary-card h-100">
+            <p class="card-eyebrow">ESTUDIOS LEÍDOS EN ESTA CONSULTA (estudios)</p>
+            @if (Model.EstudiosLeidos.Count == 0)
+            {
+                <p>Sin estudios interpretados en esta consulta.</p>
+            }
+            @foreach (var estudio in Model.EstudiosLeidos)
+            {
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>@estudio.NombreMostrar</strong>
+                            <span class="badge rounded-pill @(estudio.IdDetalleOrden.HasValue ? "text-bg-primary" : "text-bg-secondary")">
+                                @(estudio.IdDetalleOrden.HasValue ? $"De orden #{estudio.IdDetalleOrden}" : "Examen externo")
+                            </span>
+                        </div>
+                        <small class="text-muted d-block">Fecha del estudio: @estudio.Fecha.ToString("dd/MM/yyyy")</small>
+                        <p class="mb-0 mt-1">@estudio.Observaciones</p>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a class="btn btn-light-blue btn-sm"
+                           asp-controller="Documentos"
+                           asp-action="Estudio"
+                           asp-route-consultaId="@Model.ConsultationId"
+                           asp-route-estudioId="@estudio.Id">Editar</a>
+                        <form asp-controller="Documentos" asp-action="EliminarEstudio" method="post" onsubmit="return confirm('¿Eliminar este estudio de la consulta?');">
+                            <input type="hidden" name="consultaId" value="@Model.ConsultationId" />
+                            <input type="hidden" name="estudioId" value="@estudio.Id" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
             }
         </section>
     </div>
 </div>
 
 <div class="d-flex justify-content-end mt-3">
-    <form asp-action="Cerrar" method="post" onsubmit="return confirm('¿Cerrar esta consulta? Después ya no se podrá editar.');">
+    <form asp-action="Cerrar" method="post" onsubmit="return confirm('¿Finalizar esta consulta? Se registrará la fecha y hora de finalización.');">
         <input type="hidden" name="id" value="@Model.ConsultationId" />
         <button class="btn btn-primary" type="submit">Finalizar consulta</button>
     </form>
@@ -172,4 +378,62 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById("formConsultaCurso");
+            if (!form) return;
+
+            const storageKey = "consulta_draft_@Model.ConsultationId";
+            const fieldNames = [
+                "Motivo",
+                "ExamenFisico",
+                "Diagnostico",
+                "Peso",
+                "Altura",
+                "Temperatura",
+                "PresionSistolica",
+                "PresionDiastolica",
+                "RitmoCardiaco",
+                "ConcentracionOxigeno"
+            ];
+
+            // Restaurar borrador en caso de haber navegado fuera sin enviar el formulario principal (ej. Editar/Eliminar/Alergias)
+            try {
+                const raw = sessionStorage.getItem(storageKey);
+                if (raw) {
+                    const draft = JSON.parse(raw);
+                    fieldNames.forEach(name => {
+                        const el = form.elements.namedItem(name);
+                        if (el && draft[name] !== undefined && draft[name] !== "") {
+                            el.value = draft[name];
+                        }
+                    });
+                }
+            } catch { }
+
+            const saveDraftToSession = () => {
+                try {
+                    const draft = {};
+                    fieldNames.forEach(name => {
+                        const el = form.elements.namedItem(name);
+                        if (el) {
+                            draft[name] = el.value;
+                        }
+                    });
+                    sessionStorage.setItem(storageKey, JSON.stringify(draft));
+                } catch { }
+            };
+
+            form.addEventListener("input", saveDraftToSession);
+            form.addEventListener("change", saveDraftToSession);
+
+            // Al enviar el formulario principal (ya sea Guardar consulta o ir a Receta/Orden/Estudio/Incapacidad),
+            // el servidor guarda los datos, por lo que limpiamos el borrador temporal de sessionStorage.
+            form.addEventListener("submit", () => {
+                try {
+                    sessionStorage.removeItem(storageKey);
+                } catch { }
+            });
+        })();
+    </script>
 }
