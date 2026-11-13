@@ -1,0 +1,208 @@
+@model ClinicaApp.ViewModels.ConsultationAnalysisViewModel
+@{
+    ViewData["Title"] = "Análisis de consultas";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">LINQ y EF Core</p>
+        <h1>Análisis de consultas</h1>
+        <p>Indicadores clínicos calculados en SQL Server según el periodo y los filtros seleccionados.</p>
+    </div>
+</section>
+
+<form asp-action="Index" method="get" class="card p-3 mb-4">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label asp-for="Desde" class="form-label">Desde</label>
+            <input asp-for="Desde" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Hasta" class="form-label">Hasta</label>
+            <input asp-for="Hasta" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Estado" class="form-label">Estado</label>
+            <select asp-for="Estado" class="form-select"
+                    asp-items="Html.GetEnumSelectList<ClinicaApp.Models.Enums.EstadoConsulta>()">
+                <option value="">Todos</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Prioridad" class="form-label">Prioridad</label>
+            <select asp-for="Prioridad" class="form-select"
+                    asp-items="Html.GetEnumSelectList<ClinicaApp.Models.Enums.PrioridadAtencion>()">
+                <option value="">Todas</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Aplicar filtros</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <span class="text-muted">Consultas en el periodo</span>
+            <strong class="fs-3">@Model.TotalConsultas</strong>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <span class="text-muted">Duración promedio de consultas cerradas</span>
+            <strong class="fs-3">@(Model.DuracionPromedioMinutos?.ToString("N1") ?? "—") min</strong>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h2 class="h5">Consultas por estado</h2>
+            @if (Model.PorEstado.Count == 0)
+            {
+                <p class="text-muted mb-0">No hay datos para los filtros seleccionados.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var group in Model.PorEstado)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@group.Etiqueta</span><strong>@group.Cantidad</strong>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h2 class="h5">Diagnósticos frecuentes</h2>
+            @if (Model.DiagnosticosFrecuentes.Count == 0)
+            {
+                <p class="text-muted mb-0">No hay diagnósticos registrados en este periodo.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var group in Model.DiagnosticosFrecuentes)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@group.Etiqueta</span><strong>@group.Cantidad</strong>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h2 class="h5">Consultas por día</h2>
+            @if (Model.PorDia.Count == 0)
+            {
+                <p class="text-muted mb-0">No hay datos para los filtros seleccionados.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var group in Model.PorDia)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@group.Etiqueta</span><strong>@group.Cantidad</strong>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h2 class="h5">Medicamentos prescritos con mayor frecuencia</h2>
+            @if (Model.MedicamentosFrecuentes.Count == 0)
+            {
+                <p class="text-muted mb-0">No hay recetas registradas en este periodo.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var group in Model.MedicamentosFrecuentes)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@group.Etiqueta</span><strong>@group.Cantidad</strong>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+<section class="card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">Detalle de consultas</h2>
+        <span class="text-muted">Ordenadas por prioridad y fecha</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Paciente</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Diagnóstico</th>
+                    <th>Peso</th>
+                    <th>Temperatura</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Consultas.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted">No se encontraron consultas.</td></tr>
+                }
+                else
+                {
+                    @foreach (var consultation in Model.Consultas)
+                    {
+                        <tr>
+                            <td>@consultation.FechaHoraInicio.ToString("g")</td>
+                            <td>@consultation.Paciente</td>
+                            <td>@consultation.Prioridad</td>
+                            <td>@consultation.Estado</td>
+                            <td>@(string.IsNullOrWhiteSpace(consultation.Diagnostico) ? "—" : consultation.Diagnostico)</td>
+                            <td>@(consultation.Peso.HasValue ? $"{consultation.Peso:N1} kg" : "—")</td>
+                            <td>@(consultation.Temperatura.HasValue ? $"{consultation.Temperatura:N1} °C" : "—")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.TotalPaginas > 1)
+    {
+        <nav aria-label="Paginación del análisis">
+            <ul class="pagination justify-content-end mb-0">
+                <li class="page-item @(Model.Pagina <= 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-route-desde="@Model.Desde.ToString("yyyy-MM-dd")"
+                       asp-route-hasta="@Model.Hasta.ToString("yyyy-MM-dd")"
+                       asp-route-estado="@Model.Estado"
+                       asp-route-prioridad="@Model.Prioridad"
+                       asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">@Model.Pagina / @Model.TotalPaginas</span></li>
+                <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-route-desde="@Model.Desde.ToString("yyyy-MM-dd")"
+                       asp-route-hasta="@Model.Hasta.ToString("yyyy-MM-dd")"
+                       asp-route-estado="@Model.Estado"
+                       asp-route-prioridad="@Model.Prioridad"
+                       asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</section>
