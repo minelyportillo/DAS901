@@ -7,10 +7,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicaApp.Controllers
 {
     [Authorize]
+    [Route("Medicamentos")]
     public class MedicamentosController(ClinicaDbContext context) : Controller
     {
         // 3.2 CONSULTAR REGISTROS (SELECT en SQL Server)
-        [HttpGet]
+        [HttpGet("")]
+        [HttpGet("Index")]
         public async Task<IActionResult> Index(string? buscar)
         {
             ViewData["FiltroActual"] = buscar;
@@ -26,26 +28,30 @@ namespace ClinicaApp.Controllers
         }
 
         // 3.1 CREAR REGISTROS (INSERT en SQL Server)
-        [HttpGet]
+        [HttpGet("Create")]
         public IActionResult Create()
         {
             return View(new Medicamento());
         }
 
-        [HttpPost]
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Medicamento medicamento)
         {
             // 3.5 VALIDACIONES DE DATOS
             if (!string.IsNullOrWhiteSpace(medicamento.Nombre))
             {
-                medicamento.Nombre = medicamento.Nombre.Trim();
+                var nombreLimpio = medicamento.Nombre.Trim();
                 bool existe = await context.Medicamentos
-                    .AnyAsync(m => m.Nombre.ToLower() == medicamento.Nombre.ToLower());
+                    .AnyAsync(m => m.Nombre.ToLower() == nombreLimpio.ToLower());
 
                 if (existe)
                 {
-                    ModelState.AddModelError(nameof(medicamento.Nombre), "Este medicamento ya está registrado.");
+                    ModelState.AddModelError(nameof(Medicamento.Nombre), "Ya existe un medicamento registrado con este nombre.");
+                }
+                else
+                {
+                    medicamento.Nombre = nombreLimpio;
                 }
             }
 
@@ -54,47 +60,54 @@ namespace ClinicaApp.Controllers
                 return View(medicamento);
             }
 
-            // 3.6 MANEJO DE ERRORES
-            try
-            {
-                context.Medicamentos.Add(medicamento);
-                await context.SaveChangesAsync();
-                TempData["Exito"] = "Medicamento creado correctamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (DbUpdateException ex)
-            {
-                ModelState.AddModelError(string.Empty, "Error al guardar en SQL Server: " + (ex.InnerException?.Message ?? ex.Message));
-                return View(medicamento);
-            }
+            context.Medicamentos.Add(medicamento);
+            await context.SaveChangesAsync();
+
+            TempData["Exito"] = "Medicamento registrado correctamente.";
+            return RedirectToAction(nameof(Index));
         }
 
         // 3.3 ACTUALIZAR REGISTROS (UPDATE en SQL Server)
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        [HttpGet("Edit/{id:int?}")]
+        public async Task<IActionResult> Edit(int? id)
         {
+            if (id is null)
+            {
+                return NotFound();
+            }
+
             var medicamento = await context.Medicamentos.FindAsync(id);
-            if (medicamento == null) return NotFound();
+            if (medicamento is null)
+            {
+                return NotFound();
+            }
 
             return View(medicamento);
         }
 
-        [HttpPost]
+        [HttpPost("Edit/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Medicamento medicamento)
         {
-            if (id != medicamento.Id) return BadRequest();
+            if (id != medicamento.Id)
+            {
+                return NotFound();
+            }
 
             // 3.5 VALIDACIONES DE DATOS
             if (!string.IsNullOrWhiteSpace(medicamento.Nombre))
             {
-                medicamento.Nombre = medicamento.Nombre.Trim();
-                bool duplicado = await context.Medicamentos
-                    .AnyAsync(m => m.Id != id && m.Nombre.ToLower() == medicamento.Nombre.ToLower());
+                var nombreLimpio = medicamento.Nombre.Trim();
+                bool existe = await context.Medicamentos
+                    .AnyAsync(m => m.Id != id && m.Nombre.ToLower() == nombreLimpio.ToLower());
 
-                if (duplicado)
+                if (existe)
                 {
-                    ModelState.AddModelError(nameof(medicamento.Nombre), "Ya existe otro medicamento con ese nombre.");
+                    ModelState.AddModelError(nameof(Medicamento.Nombre), "Ya existe otro medicamento con este nombre.");
+                }
+                else
+                {
+                    medicamento.Nombre = nombreLimpio;
                 }
             }
 
@@ -103,13 +116,9 @@ namespace ClinicaApp.Controllers
                 return View(medicamento);
             }
 
-            // 3.6 MANEJO DE ERRORES
             try
             {
-                var existente = await context.Medicamentos.FindAsync(id);
-                if (existente == null) return NotFound();
-
-                existente.Nombre = medicamento.Nombre;
+                context.Update(medicamento);
                 await context.SaveChangesAsync();
 
                 TempData["Exito"] = "Medicamento actualizado correctamente.";
@@ -120,36 +129,29 @@ namespace ClinicaApp.Controllers
                 ModelState.AddModelError(string.Empty, "El registro fue modificado por otro usuario.");
                 return View(medicamento);
             }
-            catch (DbUpdateException ex)
-            {
-                ModelState.AddModelError(string.Empty, "Error al actualizar en SQL Server: " + (ex.InnerException?.Message ?? ex.Message));
-                return View(medicamento);
-            }
         }
 
         // 3.4 ELIMINAR REGISTROS (DELETE en SQL Server)
-        [HttpPost]
+        [HttpPost("Delete/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            // 3.6 MANEJO DE ERRORES
+            var medicamento = await context.Medicamentos.FindAsync(id);
+            if (medicamento is null)
+            {
+                TempData["Error"] = "No se encontró el medicamento que intentas eliminar.";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
-                var medicamento = await context.Medicamentos.FindAsync(id);
-                if (medicamento == null)
-                {
-                    TempData["Error"] = "El medicamento no existe o ya fue eliminado.";
-                    return RedirectToAction(nameof(Index));
-                }
-
                 context.Medicamentos.Remove(medicamento);
                 await context.SaveChangesAsync();
-
                 TempData["Exito"] = "Medicamento eliminado correctamente.";
             }
             catch (DbUpdateException)
             {
-                TempData["Error"] = "No se puede eliminar el medicamento porque está asociado a recetas médicas existentes.";
+                TempData["Error"] = "No se puede eliminar este medicamento porque está asociado a recetas o consultas registradas.";
             }
 
             return RedirectToAction(nameof(Index));
