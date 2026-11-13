@@ -6,6 +6,7 @@
     var isPatientRegistration = string.Equals(action, "Registrar", StringComparison.OrdinalIgnoreCase);
     var isSecretaries = string.Equals(controller, "Secretarias", StringComparison.OrdinalIgnoreCase);
     var isWaitingRoom = string.Equals(controller, "SalaEspera", StringComparison.OrdinalIgnoreCase);
+    var isAnalysis = string.Equals(controller, "Analisis", StringComparison.OrdinalIgnoreCase);
 }
 
 <aside class="clinic-sidebar">
@@ -40,6 +41,11 @@
            asp-controller="Pacientes" asp-action="Buscar" aria-current="@(isPatients ? "page" : null)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
             <span>Pacientes</span>
+        </a>
+        <a class="sidebar-link @(isAnalysis ? "active" : "")"
+           asp-controller="Analisis" asp-action="Index" aria-current="@(isAnalysis ? "page" : null)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15v-4m4 4V7m4 8v-6" /></svg>
+            <span>Análisis</span>
         </a>
         @if (User.IsInRole("Secretaria"))
         {
