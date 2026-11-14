@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaApp.Data
 {
-    public class ClinicaDbContext(DbContextOptions<ClinicaDbContext> options) : DbContext(options)
+    public class ClinicaDbContext(DbContextOptions<ClinicaDbContext> options) : DbContext(options), IUnitOfWork
     {
         public DbSet<Paciente> Pacientes => Set<Paciente>();
         public DbSet<Enfermedad> Enfermedades => Set<Enfermedad>();
@@ -17,10 +17,19 @@ namespace ClinicaApp.Data
         public DbSet<Orden> Ordenes => Set<Orden>();
         public DbSet<DetalleOrden> DetallesOrden => Set<DetalleOrden>();
         public DbSet<Estudio> Estudios => Set<Estudio>();
+        public DbSet<AppliedDataMigration> AppliedDataMigrations => Set<AppliedDataMigration>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<AppliedDataMigration>(entity =>
+            {
+                entity.ToTable("applied_data_migrations");
+                entity.HasKey(migration => migration.Name);
+                entity.Property(migration => migration.Name).HasMaxLength(100);
+                entity.Property(migration => migration.AppliedAtUtc).IsRequired();
+            });
 
             // 1. Tabla pacientes
             modelBuilder.Entity<Paciente>(entity =>

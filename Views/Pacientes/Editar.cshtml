@@ -1,0 +1,54 @@
+@model ClinicaApp.ViewModels.RegistrarPacienteViewModel
+
+@{
+    ViewData["Title"] = "Editar paciente";
+    var patientId = (int)ViewData["PatientId"]!;
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">PACIENTES</p>
+        <h1>Editar paciente</h1>
+        <p class="page-subtitle">Actualiza los datos básicos del expediente.</p>
+    </div>
+    <a class="btn btn-light-blue" asp-action="Expediente" asp-route-id="@patientId">&larr; Volver al expediente</a>
+</div>
+
+<div class="form-layout">
+    <section class="form-intro-card">
+        <h2>Datos del paciente</h2>
+        <p>Los cambios se guardan en la base de datos clínica.</p>
+    </section>
+
+    <form asp-action="Editar" asp-route-id="@patientId" method="post" class="form-card">
+        <div class="form-card-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" maxlength="150" autocomplete="name" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FechaNacimiento" class="form-label"></label>
+                    <input asp-for="FechaNacimiento" class="form-control" type="date"
+                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Dui" class="form-label"></label>
+                    <input asp-for="Dui" class="form-control" maxlength="10" />
+                    <span asp-validation-for="Dui" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-card-footer">
+            <a class="btn btn-outline-secondary" asp-action="Expediente" asp-route-id="@patientId">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

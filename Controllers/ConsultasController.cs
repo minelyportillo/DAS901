@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicaApp.Controllers;
 
 [Authorize(Roles = "Doctora")]
-public sealed class ConsultasController(ClinicDataStore clinicData) : Controller
+public sealed class ConsultasController(IClinicDataStore clinicData) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Atender(int id)

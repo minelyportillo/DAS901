@@ -39,10 +39,50 @@
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     @foreach (var alergia in Model.Alergias)
                     {
-                        <span class="history-tag">
+                        <div class="history-tag">
                             <strong>@alergia.TipoAlergia:</strong> @alergia.SustanciaElemento
                             <small class="text-muted">(@alergia.Severidad)</small>
-                        </span>
+                            @if (User.IsInRole("Doctora"))
+                            {
+                                <details class="mt-2">
+                                    <summary>Editar</summary>
+                                    <form asp-action="EditarAlergia" method="post" class="mt-2">
+                                        <input type="hidden" name="Id" value="@alergia.Id" />
+                                        <input type="hidden" name="PatientId" value="@Model.Patient.Id" />
+                                        <div class="row g-2">
+                                            <div class="col-sm-4">
+                                                <select name="TipoAlergia" class="form-select form-select-sm" required>
+                                                    <option value="Medicamento" selected="@(alergia.TipoAlergia == "Medicamento")">Medicamento</option>
+                                                    <option value="Alimento" selected="@(alergia.TipoAlergia == "Alimento")">Alimento</option>
+                                                    <option value="Ambiental" selected="@(alergia.TipoAlergia == "Ambiental")">Ambiental</option>
+                                                    <option value="Contacto" selected="@(alergia.TipoAlergia == "Contacto")">Contacto</option>
+                                                    <option value="Otra" selected="@(alergia.TipoAlergia == "Otra")">Otra</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-sm-5">
+                                                <input name="SustanciaElemento" value="@alergia.SustanciaElemento" class="form-control form-control-sm" maxlength="150" required />
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <select name="Severidad" class="form-select form-select-sm" required>
+                                                    <option value="Leve" selected="@(alergia.Severidad == "Leve")">Leve</option>
+                                                    <option value="Moderada" selected="@(alergia.Severidad == "Moderada")">Moderada</option>
+                                                    <option value="Severa" selected="@(alergia.Severidad == "Severa")">Severa</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 d-flex gap-2 justify-content-end">
+                                                <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <form asp-action="EliminarAlergia" method="post" class="mt-2"
+                                          onsubmit="return confirm('¿Eliminar esta alergia del expediente?');">
+                                        <input type="hidden" name="id" value="@alergia.Id" />
+                                        <input type="hidden" name="patientId" value="@Model.Patient.Id" />
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                                    </form>
+                                </details>
+                            }
+                        </div>
                     }
                 </div>
             }
@@ -95,9 +135,36 @@
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     @foreach (var enfermedad in Model.Enfermedades)
                     {
-                        <span class="history-tag">
+                        <div class="history-tag">
                             <strong>@enfermedad.Nombre</strong> · Año @enfermedad.AnioDiagnostico
-                        </span>
+                            @if (User.IsInRole("Doctora"))
+                            {
+                                <details class="mt-2">
+                                    <summary>Editar</summary>
+                                    <form asp-action="EditarEnfermedad" method="post" class="mt-2">
+                                        <input type="hidden" name="Id" value="@enfermedad.Id" />
+                                        <input type="hidden" name="PatientId" value="@Model.Patient.Id" />
+                                        <div class="row g-2">
+                                            <div class="col-sm-8">
+                                                <input name="Nombre" value="@enfermedad.Nombre" class="form-control form-control-sm" maxlength="150" required />
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <input name="AnioDiagnostico" type="number" min="1900" max="@DateTime.Today.Year" value="@enfermedad.AnioDiagnostico" class="form-control form-control-sm" required />
+                                            </div>
+                                            <div class="col-12 d-flex justify-content-end">
+                                                <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <form asp-action="EliminarEnfermedad" method="post" class="mt-2"
+                                          onsubmit="return confirm('¿Eliminar esta enfermedad del expediente?');">
+                                        <input type="hidden" name="id" value="@enfermedad.Id" />
+                                        <input type="hidden" name="patientId" value="@Model.Patient.Id" />
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                                    </form>
+                                </details>
+                            }
+                        </div>
                     }
                 </div>
             }

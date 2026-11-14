@@ -56,6 +56,11 @@
                     <a class="btn btn-light-blue btn-sm" asp-action="Expediente" asp-route-id="@patient.Id">Ver expediente</a>
                     @if (User.IsInRole("Secretaria"))
                     {
+                        <a class="btn btn-outline-secondary btn-sm" asp-action="Editar" asp-route-id="@patient.Id">Editar</a>
+                        <form asp-action="Eliminar" asp-route-id="@patient.Id" method="post"
+                              onsubmit="return confirm('¿Eliminar este paciente? Solo se permite si no tiene historial clínico.');">
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
                         <form asp-controller="SalaEspera" asp-action="RegistrarLlegada" method="post">
                             <input type="hidden" name="pacienteId" value="@patient.Id" />
                             <button class="btn btn-primary btn-sm" type="submit">Registrar llegada</button>

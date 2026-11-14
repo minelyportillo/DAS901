@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicaApp.Controllers;
 
 [Authorize(Roles = "Doctora")]
-public sealed class DocumentosController(ClinicDataStore clinicData) : Controller
+public sealed class DocumentosController(
+    IClinicDataStore clinicData,
+    IMedicamentoService medicamentoService) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Receta(int consultaId, int? detalleId = null, int? medicamentoId = null)
@@ -22,7 +24,7 @@ public sealed class DocumentosController(ClinicDataStore clinicData) : Controlle
             ConsultationId = consultaId,
             DetalleId = detalleId,
             IdMedicamento = medicamentoId,
-            CatalogoMedicamentos = await clinicData.GetMedicamentosAsync()
+            CatalogoMedicamentos = await medicamentoService.ObtenerCatalogoAsync()
         };
 
         if (detalleId.HasValue)
@@ -49,7 +51,7 @@ public sealed class DocumentosController(ClinicDataStore clinicData) : Controlle
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Receta(PrescriptionViewModel model)
     {
-        model.CatalogoMedicamentos = await clinicData.GetMedicamentosAsync();
+        model.CatalogoMedicamentos = await medicamentoService.ObtenerCatalogoAsync();
 
         if (!ModelState.IsValid)
         {
@@ -109,7 +111,7 @@ public sealed class DocumentosController(ClinicDataStore clinicData) : Controlle
             return View(model);
         }
 
-        var nuevoId = await clinicData.CreateMedicamentoAsync(model.Nombre);
+        var nuevoId = await medicamentoService.RegistrarAsync(model.Nombre);
         TempData["Mensaje"] = $"El medicamento '{model.Nombre.Trim()}' fue registrado en la tabla medicamentos.";
         return RedirectToAction(nameof(Receta), new
         {
@@ -117,6 +119,94 @@ public sealed class DocumentosController(ClinicDataStore clinicData) : Controlle
             detalleId = model.DetalleId,
             medicamentoId = nuevoId
         });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CatalogoMedicamentos(int consultaId)
+    {
+        if (await GetActiveConsultationAsync(consultaId) is null)
+        {
+            return NotFound();
+        }
+
+        return View(new MedicationCatalogViewModel
+        {
+            ConsultationId = consultaId,
+            Medications = await medicamentoService.ObtenerCatalogoAsync()
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditarMedicamento(int consultaId, int medicamentoId)
+    {
+        if (await GetActiveConsultationAsync(consultaId) is null)
+        {
+            return NotFound();
+        }
+
+        var medication = await medicamentoService.ObtenerPorIdAsync(medicamentoId);
+        return medication is null
+            ? NotFound()
+            : View(new MedicationViewModel
+            {
+                ConsultationId = consultaId,
+                MedicamentoId = medication.Id,
+                Nombre = medication.Nombre
+            });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarMedicamento(MedicationViewModel model)
+    {
+        if (!model.MedicamentoId.HasValue
+            || await GetActiveConsultationAsync(model.ConsultationId) is null)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        if (!await medicamentoService.ActualizarAsync(model.MedicamentoId.Value, model.Nombre))
+        {
+            if (await medicamentoService.ObtenerPorIdAsync(model.MedicamentoId.Value) is null)
+            {
+                return NotFound();
+            }
+
+            ModelState.AddModelError(nameof(model.Nombre), "Ya existe otro medicamento con ese nombre.");
+            return View(model);
+        }
+
+        TempData["Mensaje"] = "El medicamento se actualizó correctamente.";
+        return RedirectToAction(nameof(CatalogoMedicamentos), new { consultaId = model.ConsultationId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarMedicamento(int consultaId, int medicamentoId)
+    {
+        if (await GetActiveConsultationAsync(consultaId) is null)
+        {
+            return NotFound();
+        }
+
+        if (!await medicamentoService.EliminarSiNoEstaPrescritoAsync(medicamentoId))
+        {
+            if (await medicamentoService.ObtenerPorIdAsync(medicamentoId) is null)
+            {
+                return NotFound();
+            }
+
+            TempData["Error"] = "No se puede eliminar un medicamento que ya aparece en una receta.";
+            return RedirectToAction(nameof(CatalogoMedicamentos), new { consultaId });
+        }
+
+        TempData["Mensaje"] = "El medicamento se eliminó del catálogo.";
+        return RedirectToAction(nameof(CatalogoMedicamentos), new { consultaId });
     }
 
     [HttpGet]

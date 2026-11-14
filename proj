@@ -1,0 +1,96 @@
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ClinicaApp.slnx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Controllers/ConsultasController.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Controllers/DocumentosController.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Controllers/PacientesController.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Controllers/SalaEsperaController.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Data/ClinicaDbContext.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Migrations/20261101180641_InicializarBaseDatosClinica.Designer.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Migrations/20261101180641_InicializarBaseDatosClinica.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Migrations/ClinicaDbContextModelSnapshot.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/AlergiaPaciente.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Consulta.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/DetalleOrden.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/DetalleReceta.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Enfermedad.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Estudio.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Incapacidad.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Medicamento.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Orden.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Paciente.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/Receta.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Models/SignosVitales.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Program.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Services/ClinicDataStore.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/AlergiaPacienteViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/ClinicalConsultationViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/EnfermedadViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/ExamOrderViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/IncapacityViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/MedicationViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/PrescriptionViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/RegistrarPacienteViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/StudyViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ViewModels/TriageViewModel.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Consultas/Atender.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Consultas/Detalle.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/Estudio.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/Imprimir.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/Incapacidad.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/NuevoMedicamento.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/OrdenExamen.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Documentos/Receta.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Pacientes/Buscar.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Pacientes/Expediente.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/Pacientes/Registrar.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/SalaEspera/Index.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Views/SalaEspera/SignosVitales.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-grid.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-grid.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-grid.rtl.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-grid.rtl.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-reboot.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-reboot.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-reboot.rtl.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-reboot.rtl.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-utilities.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-utilities.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-utilities.rtl.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap-utilities.rtl.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap.rtl.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/css/bootstrap.rtl.min.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.esm.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.esm.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/bootstrap/dist/js/bootstrap.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery-validation/dist/jquery.validate.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery-validation/dist/jquery.validate.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery/dist/jquery.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery/dist/jquery.min.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery/dist/jquery.slim.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/lib/jquery/dist/jquery.slim.min.js', LF will be replaced by CRLF the next time Git touches it
+ ClinicaApp.csproj                           |    1 [32m+[m
+ Controllers/ConsultasController.cs          |    2 [32m+[m[31m-[m
+ Controllers/DocumentosController.cs         |   98 [32m++[m[31m-[m
+ Controllers/PacientesController.cs          |  191 [32m++++[m[31m-[m
+ Controllers/SalaEsperaController.cs         |    2 [32m+[m[31m-[m
+ Data/ClinicaDbContext.cs                    |   11 [32m+[m[31m-[m
+ Migrations/ClinicaDbContextModelSnapshot.cs |   14 [32m+[m
+ Program.cs                                  |   22 [32m+[m[31m-[m
+ README.md                                   |  146 [32m+++[m[31m-[m
+ Services/ClinicDataStore.cs                 | 1176 [32m++++++++++[m[31m-----------------[m
+ ViewModels/AlergiaPacienteViewModel.cs      |    2 [32m+[m
+ ViewModels/EnfermedadViewModel.cs           |    2 [32m+[m
+ ViewModels/MedicationViewModel.cs           |    2 [32m+[m
+ ViewModels/PrescriptionViewModel.cs         |    3 [32m+[m[31m-[m
+ Views/Consultas/Atender.cshtml              |   73 [32m+[m[31m-[m
+ Views/Documentos/Receta.cshtml              |    3 [32m+[m
+ Views/Pacientes/Buscar.cshtml               |    5 [32m+[m
+ Views/Pacientes/Expediente.cshtml           |   75 [32m+[m[31m-[m
+ 18 files changed, 1042 insertions(+), 786 deletions(-)

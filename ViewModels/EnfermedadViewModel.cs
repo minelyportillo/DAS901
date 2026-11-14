@@ -4,6 +4,8 @@ namespace ClinicaApp.ViewModels;
 
 public sealed class EnfermedadViewModel
 {
+    public int? Id { get; set; }
+
     [Required]
     public int PatientId { get; set; }
 

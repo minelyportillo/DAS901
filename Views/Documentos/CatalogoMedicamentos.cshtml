@@ -1,0 +1,52 @@
+@model ClinicaApp.ViewModels.MedicationCatalogViewModel
+
+@{
+    ViewData["Title"] = "Catálogo de medicamentos";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">DOCUMENTOS · CONSULTA #@Model.ConsultationId</p>
+        <h1>Catálogo de medicamentos</h1>
+        <p class="page-subtitle">Los medicamentos usados en recetas no se pueden eliminar.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="NuevoMedicamento" asp-route-consultaId="@Model.ConsultationId">+ Nuevo medicamento</a>
+</div>
+
+<section class="users-card">
+    @if (Model.Medications.Count == 0)
+    {
+        <div class="empty-state">
+            <h2>Catálogo vacío</h2>
+            <p>Agrega un medicamento para incluirlo en una receta.</p>
+        </div>
+    }
+    else
+    {
+        <div class="users-list">
+            @foreach (var medication in Model.Medications)
+            {
+                <article class="user-row">
+                    <div class="user-details"><strong>@medication.Nombre</strong></div>
+                    <a class="btn btn-outline-secondary btn-sm"
+                       asp-action="EditarMedicamento"
+                       asp-route-consultaId="@Model.ConsultationId"
+                       asp-route-medicamentoId="@medication.Id">Editar</a>
+                    <form asp-action="EliminarMedicamento"
+                          asp-route-consultaId="@Model.ConsultationId"
+                          asp-route-medicamentoId="@medication.Id"
+                          method="post"
+                          onsubmit="return confirm('¿Eliminar este medicamento si aún no se ha prescrito?');">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+<div class="d-flex justify-content-end mt-3">
+    <a class="btn btn-light-blue"
+       asp-action="Receta"
+       asp-route-consultaId="@Model.ConsultationId">Volver a la receta</a>
+</div>
