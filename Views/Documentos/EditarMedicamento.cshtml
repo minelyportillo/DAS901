@@ -1,0 +1,37 @@
+@model ClinicaApp.ViewModels.MedicationViewModel
+
+@{
+    ViewData["Title"] = "Editar medicamento";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="page-kicker">CATÁLOGO DE MEDICAMENTOS</p>
+        <h1>Editar medicamento</h1>
+        <p class="page-subtitle">Actualiza el nombre que aparecerá en el catálogo.</p>
+    </div>
+    <a class="btn btn-light-blue"
+       asp-action="CatalogoMedicamentos"
+       asp-route-consultaId="@Model.ConsultationId">&larr; Volver al catálogo</a>
+</div>
+
+<form asp-action="EditarMedicamento" method="post" class="form-card document-form">
+    <input asp-for="ConsultationId" type="hidden" />
+    <input asp-for="MedicamentoId" type="hidden" />
+    <div class="form-card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" maxlength="150" />
+        <span asp-validation-for="Nombre" class="text-danger"></span>
+    </div>
+    <div class="form-card-footer">
+        <a class="btn btn-outline-secondary"
+           asp-action="CatalogoMedicamentos"
+           asp-route-consultaId="@Model.ConsultationId">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

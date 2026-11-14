@@ -22,6 +22,20 @@ namespace ClinicaApp.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClinicaApp.Data.AppliedDataMigration", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("applied_data_migrations", (string)null);
+                });
+
             modelBuilder.Entity("ClinicaApp.Models.AlergiaPaciente", b =>
                 {
                     b.Property<int>("Id")

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClinicaApp.Controllers;
 
 [Authorize(Roles = "Secretaria,Doctora")]
-public sealed class SalaEsperaController(ClinicDataStore clinicData) : Controller
+public sealed class SalaEsperaController(IClinicDataStore clinicData) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index()

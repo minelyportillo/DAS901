@@ -26,6 +26,9 @@
            asp-action="NuevoMedicamento"
            asp-route-consultaId="@Model.ConsultationId"
            asp-route-detalleId="@Model.DetalleId">+ Agregar medicamento</a>
+        <a class="btn btn-outline-secondary btn-sm"
+           asp-action="CatalogoMedicamentos"
+           asp-route-consultaId="@Model.ConsultationId">Administrar catálogo</a>
     </div>
     <div class="form-card-body">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using ClinicaApp.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ClinicaApp.ViewModels;
@@ -35,5 +34,5 @@ public sealed class PrescriptionViewModel
     public string? Indicaciones { get; set; }
 
     [ValidateNever]
-    public IReadOnlyList<ClinicDataStore.MedicamentoRecord> CatalogoMedicamentos { get; set; } = [];
+    public IReadOnlyList<MedicationOption> CatalogoMedicamentos { get; set; } = [];
 }

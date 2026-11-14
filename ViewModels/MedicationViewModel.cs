@@ -9,6 +9,8 @@ public sealed class MedicationViewModel
 
     public int? DetalleId { get; set; }
 
+    public int? MedicamentoId { get; set; }
+
     [Required(ErrorMessage = "El nombre del medicamento es obligatorio.")]
     [StringLength(150, MinimumLength = 2, ErrorMessage = "El nombre debe tener entre 2 y 150 caracteres.")]
     [Display(Name = "Nombre del medicamento")]

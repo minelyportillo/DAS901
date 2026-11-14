@@ -1,4 +1,5 @@
 using ClinicaApp.Data;
+using ClinicaApp.Repositories;
 using ClinicaApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -9,9 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ClinicaDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IUnitOfWork>(serviceProvider =>
+    serviceProvider.GetRequiredService<ClinicaDbContext>());
+builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
+builder.Services.AddScoped<IAlergiaPacienteRepository, AlergiaPacienteRepository>();
+builder.Services.AddScoped<IEnfermedadRepository, EnfermedadRepository>();
+builder.Services.AddScoped<IMedicamentoRepository, MedicamentoRepository>();
+builder.Services.AddScoped<IPacienteService, PacienteService>();
+builder.Services.AddScoped<IMedicamentoService, MedicamentoService>();
 builder.Services.AddScoped<IConsultationAnalysisService, ConsultationAnalysisService>();
+builder.Services.AddScoped<LegacyClinicDataImporter>();
 builder.Services.AddSingleton<IClinicUserService, JsonClinicUserService>();
-builder.Services.AddSingleton<ClinicDataStore>();
+builder.Services.AddScoped<IClinicDataStore, ClinicDataStore>();
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -47,6 +58,15 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ClinicaDbContext>();
+    await db.Database.MigrateAsync();
+    await scope.ServiceProvider
+        .GetRequiredService<LegacyClinicDataImporter>()
+        .ImportIfPendingAsync();
+}
+
 var userService = app.Services.GetRequiredService<IClinicUserService>();
 await userService.InitializeAsync(
     app.Configuration.GetSection("DevelopmentSeedUsers"),

@@ -1,836 +1,512 @@
-using System.Text.Json;
+using ClinicaApp.Data;
+using ClinicaApp.Models;
 using ClinicaApp.Models.Enums;
 using ClinicaApp.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicaApp.Services;
 
-public sealed class ClinicDataStore
+public sealed class ClinicDataStore : IClinicDataStore
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private readonly ClinicaDbContext _db;
+
+    public ClinicDataStore(ClinicaDbContext db)
     {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
-
-    private static readonly string[] DefaultMedications =
-    [
-        "Paracetamol 500 mg",
-        "Ibuprofeno 400 mg",
-        "Amoxicilina 500 mg",
-        "Omeprazol 20 mg",
-        "Loratadina 10 mg",
-        "Azitromicina 500 mg",
-        "Losartán 50 mg",
-        "Metformina 850 mg"
-    ];
-
-    private readonly string _filePath;
-    private readonly SemaphoreSlim _gate = new(1, 1);
-
-    public ClinicDataStore(IWebHostEnvironment environment)
-    {
-        _filePath = Path.Combine(environment.ContentRootPath, "App_Data", "clinic-data.json");
+        _db = db;
     }
 
     public async Task<IReadOnlyList<PatientListItem>> SearchPatientsAsync(string? term)
     {
-        await _gate.WaitAsync();
-        try
+        var searchTerm = term?.Trim();
+        var patients = _db.Pacientes.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var data = await ReadAsync();
-            return data.Patients
-                .Where(patient => string.IsNullOrWhiteSpace(term)
-                    || patient.Nombre.Contains(term.Trim(), StringComparison.CurrentCultureIgnoreCase)
-                    || (!string.IsNullOrWhiteSpace(patient.Dui)
-                        && patient.Dui.Contains(term.Trim(), StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(patient => patient.Nombre)
-                .Select(ToListItem)
-                .ToArray();
+            patients = patients.Where(patient =>
+                patient.Nombre.Contains(searchTerm)
+                || (patient.Dui != null && patient.Dui.Contains(searchTerm)));
         }
-        finally
-        {
-            _gate.Release();
-        }
-    }
 
-    public async Task<int> CreatePatientAsync(RegistrarPacienteViewModel model)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            var patient = new PatientRecord
-            {
-                Id = data.Patients.Count == 0 ? 1 : data.Patients.Max(item => item.Id) + 1,
-                Nombre = model.Nombre.Trim(),
-                FechaNacimiento = model.FechaNacimiento.Date,
-                Dui = string.IsNullOrWhiteSpace(model.Dui) ? null : model.Dui.Trim()
-            };
-            data.Patients.Add(patient);
-            await WriteAsync(data);
-            return patient.Id;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        return await patients
+            .OrderBy(patient => patient.Nombre)
+            .Select(patient => new PatientListItem(
+                patient.Id,
+                patient.Nombre,
+                patient.FechaNacimiento,
+                patient.Dui))
+            .ToListAsync();
     }
 
     public async Task<PatientChartData?> GetPatientChartAsync(int patientId)
     {
-        await _gate.WaitAsync();
-        try
+        var patient = await LoadPatientGraph()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == patientId);
+        if (patient is null)
         {
-            var data = await ReadAsync();
-            var patient = data.Patients.FirstOrDefault(item => item.Id == patientId);
-            if (patient is null)
-            {
-                return null;
-            }
-
-            var consultations = patient.Consultations
-                .OrderByDescending(consultation => consultation.FechaHoraInicio)
-                .ToArray();
-
-            var studies = BuildPatientStudies(patient);
-
-            return new PatientChartData(
-                ToListItem(patient),
-                patient.Alergias.ToArray(),
-                patient.Enfermedades.OrderByDescending(item => item.AnioDiagnostico).ToArray(),
-                consultations,
-                studies);
+            return null;
         }
-        finally
-        {
-            _gate.Release();
-        }
-    }
 
-    public async Task<bool> AddAlergiaAsync(AlergiaPacienteViewModel model)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            var patient = data.Patients.FirstOrDefault(item => item.Id == model.PatientId);
-            if (patient is null)
-            {
-                return false;
-            }
+        var record = ToPatientRecord(patient);
+        var consultations = record.Consultations
+            .OrderByDescending(consultation => consultation.FechaHoraInicio)
+            .ToArray();
 
-            var nextId = NextId(data, d => d.Patients.SelectMany(p => p.Alergias).Select(a => a.Id));
-            patient.Alergias.Add(new AlergiaRecord
-            {
-                Id = nextId,
-                IdPaciente = patient.Id,
-                TipoAlergia = model.TipoAlergia.Trim(),
-                SustanciaElemento = model.SustanciaElemento.Trim(),
-                Severidad = model.Severidad.Trim()
-            });
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    public async Task<bool> AddEnfermedadAsync(EnfermedadViewModel model)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            var patient = data.Patients.FirstOrDefault(item => item.Id == model.PatientId);
-            if (patient is null)
-            {
-                return false;
-            }
-
-            var nextId = NextId(data, d => d.Patients.SelectMany(p => p.Enfermedades).Select(e => e.Id));
-            patient.Enfermedades.Add(new EnfermedadRecord
-            {
-                Id = nextId,
-                IdPaciente = patient.Id,
-                Nombre = model.Nombre.Trim(),
-                AnioDiagnostico = model.AnioDiagnostico
-            });
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    public async Task<IReadOnlyList<MedicamentoRecord>> GetMedicamentosAsync()
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            return data.Medicamentos
-                .OrderBy(item => item.Nombre)
-                .ToArray();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    public async Task<int> CreateMedicamentoAsync(string nombre)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            var nombreLimpio = nombre.Trim();
-            var existente = data.Medicamentos.FirstOrDefault(m =>
-                string.Equals(m.Nombre, nombreLimpio, StringComparison.OrdinalIgnoreCase));
-
-            if (existente is not null)
-            {
-                return existente.Id;
-            }
-
-            var nuevo = new MedicamentoRecord
-            {
-                Id = NextId(data, d => d.Medicamentos.Select(m => m.Id)),
-                Nombre = nombreLimpio
-            };
-            data.Medicamentos.Add(nuevo);
-            await WriteAsync(data);
-            return nuevo.Id;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        return new PatientChartData(
+            ToListItem(record),
+            record.Alergias.ToArray(),
+            record.Enfermedades.OrderByDescending(item => item.AnioDiagnostico).ToArray(),
+            consultations,
+            BuildPatientStudies(record));
     }
 
     public async Task<IReadOnlyList<WaitingRoomItem>> GetWaitingRoomAsync(DateTime date)
     {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            return data.Patients
-                .SelectMany(patient => patient.Consultations
-                    .Where(consultation => consultation.FechaHoraInicio.Date == date.Date
-                        && consultation.Estado != EstadoConsulta.Cerrada)
-                    .Select(consultation => new WaitingRoomItem(
-                        consultation.Id,
-                        patient.Id,
-                        patient.Nombre,
-                        patient.FechaNacimiento,
-                        patient.Dui,
-                        consultation.FechaHoraInicio,
-                        consultation.Prioridad,
-                        consultation.Estado,
-                        consultation.SignosVitales?.Peso,
-                        consultation.SignosVitales?.Altura,
-                        consultation.SignosVitales?.Temperatura)))
-                .OrderByDescending(item => item.Priority)
-                .ThenBy(item => item.StartTime)
-                .ToArray();
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        var from = date.Date;
+        var until = from.AddDays(1);
+        return await _db.Consultas
+            .AsNoTracking()
+            .Where(consultation => consultation.FechaHoraInicio >= from
+                && consultation.FechaHoraInicio < until
+                && consultation.Estado != EstadoConsulta.Cerrada)
+            .OrderByDescending(consultation => consultation.Prioridad)
+            .ThenBy(consultation => consultation.FechaHoraInicio)
+            .Select(consultation => new WaitingRoomItem(
+                consultation.Id,
+                consultation.IdPaciente,
+                consultation.Paciente.Nombre,
+                consultation.Paciente.FechaNacimiento,
+                consultation.Paciente.Dui,
+                consultation.FechaHoraInicio,
+                consultation.Prioridad,
+                consultation.Estado,
+                consultation.SignosVitales == null ? null : consultation.SignosVitales.Peso,
+                consultation.SignosVitales == null ? null : consultation.SignosVitales.Altura,
+                consultation.SignosVitales == null ? null : consultation.SignosVitales.Temperatura))
+            .ToListAsync();
     }
 
     public async Task<int> RegisterArrivalAsync(int patientId)
     {
-        await _gate.WaitAsync();
-        try
+        var patientExists = await _db.Pacientes.AnyAsync(patient => patient.Id == patientId);
+        if (!patientExists)
         {
-            var data = await ReadAsync();
-            var patient = data.Patients.FirstOrDefault(item => item.Id == patientId)
-                ?? throw new KeyNotFoundException("No se encontró el paciente.");
-            if (patient.Consultations.Any(item =>
-                item.FechaHoraInicio.Date == DateTime.Today && item.Estado != EstadoConsulta.Cerrada))
-            {
-                throw new InvalidOperationException("Este paciente ya tiene una consulta activa hoy.");
-            }
+            throw new KeyNotFoundException("No se encontró el paciente.");
+        }
 
-            var consultation = new ConsultationRecord
-            {
-                Id = NextId(data, d => d.Patients.SelectMany(p => p.Consultations).Select(c => c.Id)),
-                IdPaciente = patient.Id,
-                FechaHoraInicio = DateTime.Now,
-                Prioridad = PrioridadAtencion.Media,
-                Estado = EstadoConsulta.Esperando
-            };
-            patient.Consultations.Add(consultation);
-            await WriteAsync(data);
-            return consultation.Id;
-        }
-        finally
+        var today = DateTime.Today;
+        var tomorrow = today.AddDays(1);
+        var hasActiveConsultation = await _db.Consultas.AnyAsync(consultation =>
+            consultation.IdPaciente == patientId
+            && consultation.FechaHoraInicio >= today
+            && consultation.FechaHoraInicio < tomorrow
+            && consultation.Estado != EstadoConsulta.Cerrada);
+        if (hasActiveConsultation)
         {
-            _gate.Release();
+            throw new InvalidOperationException("Este paciente ya tiene una consulta activa hoy.");
         }
+
+        var consultation = new Consulta
+        {
+            IdPaciente = patientId,
+            FechaHoraInicio = DateTime.Now,
+            Prioridad = PrioridadAtencion.Media,
+            Estado = EstadoConsulta.Esperando
+        };
+        _db.Consultas.Add(consultation);
+        await _db.SaveChangesAsync();
+        return consultation.Id;
     }
 
     public async Task<bool> SetPriorityAsync(int consultationId, PrioridadAtencion priority)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.Esperando)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.Esperando)
-            {
-                return false;
-            }
+            return false;
+        }
 
-            consultation.Prioridad = priority;
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        consultation.Prioridad = priority;
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> SaveTriageAsync(TriageViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.SignosVitales)
+            .FirstOrDefaultAsync(item => item.Id == model.ConsultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.Esperando)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(model.ConsultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.Esperando)
-            {
-                return false;
-            }
+            return false;
+        }
 
-            consultation.SignosVitales ??= new SignosVitalesRecord
-            {
-                Id = NextId(data, d => d.Patients
-                    .SelectMany(p => p.Consultations)
-                    .Where(c => c.SignosVitales is not null)
-                    .Select(c => c.SignosVitales!.Id)),
-                IdConsulta = consultation.Id
-            };
-            consultation.SignosVitales.Peso = model.Peso;
-            consultation.SignosVitales.Altura = model.Altura;
-            consultation.SignosVitales.Temperatura = model.Temperatura;
-            consultation.Prioridad = model.Prioridad;
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        consultation.SignosVitales ??= new SignosVitales();
+        consultation.SignosVitales.Peso = model.Peso;
+        consultation.SignosVitales.Altura = model.Altura;
+        consultation.SignosVitales.Temperatura = model.Temperatura;
+        consultation.Prioridad = model.Prioridad;
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<ConsultationPageData?> StartConsultationAsync(int consultationId)
     {
-        await _gate.WaitAsync();
-        try
+        var patient = await LoadPatientGraph()
+            .FirstOrDefaultAsync(item => item.Consultas.Any(consultation => consultation.Id == consultationId));
+        var entity = patient?.Consultas.FirstOrDefault(item => item.Id == consultationId);
+        if (patient is null || entity is null || entity.Estado == EstadoConsulta.Cerrada)
         {
-            var data = await ReadAsync();
-            var found = FindConsultation(data, consultationId);
-            if (found.Patient is null || found.Consultation is null
-                || found.Consultation.Estado == EstadoConsulta.Cerrada)
-            {
-                return null;
-            }
-
-            if (found.Consultation.Estado == EstadoConsulta.Esperando)
-            {
-                found.Consultation.Estado = EstadoConsulta.EnAtencion;
-                await WriteAsync(data);
-            }
-
-            return BuildConsultationPage(found.Patient, found.Consultation);
+            return null;
         }
-        finally
+
+        if (entity.Estado == EstadoConsulta.Esperando)
         {
-            _gate.Release();
+            entity.Estado = EstadoConsulta.EnAtencion;
+            await _db.SaveChangesAsync();
         }
+
+        return BuildConsultationPage(ToPatientRecord(patient), ToConsultationRecord(entity));
     }
 
     public async Task<ConsultationPageData?> GetConsultationAsync(int consultationId)
     {
-        await _gate.WaitAsync();
-        try
-        {
-            var data = await ReadAsync();
-            var found = FindConsultation(data, consultationId);
-            return found.Patient is null || found.Consultation is null
-                ? null
-                : BuildConsultationPage(found.Patient, found.Consultation);
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        var patient = await LoadPatientGraph()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Consultas.Any(consultation => consultation.Id == consultationId));
+        var consultation = patient?.Consultas.FirstOrDefault(item => item.Id == consultationId);
+        return patient is null || consultation is null
+            ? null
+            : BuildConsultationPage(ToPatientRecord(patient), ToConsultationRecord(consultation));
     }
 
     public async Task<bool> SaveClinicalNotesAsync(ClinicalConsultationViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.SignosVitales)
+            .FirstOrDefaultAsync(item => item.Id == model.ConsultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(model.ConsultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            consultation.Motivo = model.Motivo?.Trim();
-            consultation.ExamenFisico = model.ExamenFisico?.Trim();
-            consultation.Diagnostico = model.Diagnostico?.Trim();
-
-            consultation.SignosVitales ??= new SignosVitalesRecord
-            {
-                Id = NextId(data, d => d.Patients
-                    .SelectMany(p => p.Consultations)
-                    .Where(c => c.SignosVitales is not null)
-                    .Select(c => c.SignosVitales!.Id)),
-                IdConsulta = consultation.Id
-            };
-            consultation.SignosVitales.Peso = model.Peso;
-            consultation.SignosVitales.Altura = model.Altura;
-            consultation.SignosVitales.Temperatura = model.Temperatura;
-            consultation.SignosVitales.PresionSistolica = model.PresionSistolica;
-            consultation.SignosVitales.PresionDiastolica = model.PresionDiastolica;
-            consultation.SignosVitales.RitmoCardiaco = model.RitmoCardiaco;
-            consultation.SignosVitales.ConcentracionOxigeno = model.ConcentracionOxigeno;
-
-            await WriteAsync(data);
-            return true;
+            return false;
         }
-        finally
-        {
-            _gate.Release();
-        }
+
+        consultation.Motivo = model.Motivo?.Trim();
+        consultation.ExamenFisico = model.ExamenFisico?.Trim();
+        consultation.Diagnostico = model.Diagnostico?.Trim();
+
+        consultation.SignosVitales ??= new SignosVitales();
+        consultation.SignosVitales.Peso = model.Peso;
+        consultation.SignosVitales.Altura = model.Altura;
+        consultation.SignosVitales.Temperatura = model.Temperatura;
+        consultation.SignosVitales.PresionSistolica = model.PresionSistolica;
+        consultation.SignosVitales.PresionDiastolica = model.PresionDiastolica;
+        consultation.SignosVitales.RitmoCardiaco = model.RitmoCardiaco;
+        consultation.SignosVitales.ConcentracionOxigeno = model.ConcentracionOxigeno;
+
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> CloseConsultationAsync(int consultationId)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(consultation.Motivo)
-                || string.IsNullOrWhiteSpace(consultation.Diagnostico))
-            {
-                throw new InvalidOperationException("Guarda el motivo y el diagnóstico antes de finalizar la consulta.");
-            }
-
-            consultation.Estado = EstadoConsulta.Cerrada;
-            consultation.FechaHoraFinalizacion = DateTime.Now;
-            await WriteAsync(data);
-            return true;
+            return false;
         }
-        finally
+
+        if (string.IsNullOrWhiteSpace(consultation.Motivo)
+            || string.IsNullOrWhiteSpace(consultation.Diagnostico))
         {
-            _gate.Release();
+            throw new InvalidOperationException("Guarda el motivo y el diagnóstico antes de finalizar la consulta.");
         }
+
+        consultation.Estado = EstadoConsulta.Cerrada;
+        consultation.FechaHoraFinalizacion = DateTime.Now;
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> SavePrescriptionAsync(int consultationId, PrescriptionViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        if (!model.IdMedicamento.HasValue)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
+            return false;
+        }
+
+        var consultation = await _db.Consultas
+            .Include(item => item.Recetas)
+            .ThenInclude(recipe => recipe.Detalles)
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        var medication = await _db.Medicamentos
+            .FirstOrDefaultAsync(item => item.Id == model.IdMedicamento.Value);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion || medication is null)
+        {
+            return false;
+        }
+
+        if (model.DetalleId.HasValue)
+        {
+            var detail = consultation.Recetas
+                .SelectMany(recipe => recipe.Detalles)
+                .FirstOrDefault(item => item.Id == model.DetalleId.Value);
+            if (detail is null)
             {
                 return false;
             }
 
-            if (!model.IdMedicamento.HasValue)
+            detail.IdMedicamento = medication.Id;
+            detail.Dosis = model.Dosis.Trim();
+            detail.Frecuencia = model.Frecuencia.Trim();
+            detail.Duracion = model.Duracion.Trim();
+            detail.Indicaciones = model.Indicaciones?.Trim() ?? string.Empty;
+        }
+        else
+        {
+            var recipe = consultation.Recetas.FirstOrDefault();
+            if (recipe is null)
             {
-                return false;
+                recipe = new Receta { IdConsulta = consultation.Id };
+                consultation.Recetas.Add(recipe);
             }
 
-            var medicamento = data.Medicamentos.FirstOrDefault(m => m.Id == model.IdMedicamento.Value);
-            if (medicamento is null)
+            recipe.Detalles.Add(new DetalleReceta
             {
-                return false;
-            }
-
-            if (model.DetalleId.HasValue)
-            {
-                var existente = consultation.Recetas
-                    .SelectMany(r => r.Detalles)
-                    .FirstOrDefault(d => d.Id == model.DetalleId.Value);
-                if (existente is null)
-                {
-                    return false;
-                }
-
-                existente.IdMedicamento = medicamento.Id;
-                existente.NombreMedicamento = medicamento.Nombre;
-                existente.Dosis = model.Dosis.Trim();
-                existente.Frecuencia = model.Frecuencia.Trim();
-                existente.Duracion = model.Duracion.Trim();
-                existente.Indicaciones = string.IsNullOrWhiteSpace(model.Indicaciones) ? string.Empty : model.Indicaciones.Trim();
-                await WriteAsync(data);
-                return true;
-            }
-
-            var receta = consultation.Recetas.FirstOrDefault();
-            if (receta is null)
-            {
-                receta = new RecetaRecord
-                {
-                    Id = NextId(data, d => d.Patients
-                        .SelectMany(p => p.Consultations)
-                        .SelectMany(c => c.Recetas)
-                        .Select(r => r.Id)),
-                    IdConsulta = consultation.Id
-                };
-                consultation.Recetas.Add(receta);
-            }
-
-            var nextDetalleId = NextId(data, d => d.Patients
-                .SelectMany(p => p.Consultations)
-                .SelectMany(c => c.Recetas)
-                .SelectMany(r => r.Detalles)
-                .Select(det => det.Id));
-
-            receta.Detalles.Add(new DetalleRecetaRecord
-            {
-                Id = nextDetalleId,
-                IdReceta = receta.Id,
-                IdMedicamento = medicamento.Id,
-                NombreMedicamento = medicamento.Nombre,
+                IdMedicamento = medication.Id,
                 Dosis = model.Dosis.Trim(),
                 Frecuencia = model.Frecuencia.Trim(),
                 Duracion = model.Duracion.Trim(),
-                Indicaciones = string.IsNullOrWhiteSpace(model.Indicaciones) ? string.Empty : model.Indicaciones.Trim()
+                Indicaciones = model.Indicaciones?.Trim() ?? string.Empty
             });
+        }
 
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeletePrescriptionDetailAsync(int consultationId, int detalleId)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.Recetas)
+            .ThenInclude(recipe => recipe.Detalles)
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            foreach (var receta in consultation.Recetas.ToList())
-            {
-                var detalle = receta.Detalles.FirstOrDefault(d => d.Id == detalleId);
-                if (detalle is not null)
-                {
-                    receta.Detalles.Remove(detalle);
-                    if (receta.Detalles.Count == 0)
-                    {
-                        consultation.Recetas.Remove(receta);
-                    }
-                    await WriteAsync(data);
-                    return true;
-                }
-            }
-
             return false;
         }
-        finally
+
+        var recipe = consultation.Recetas.FirstOrDefault(item =>
+            item.Detalles.Any(detail => detail.Id == detalleId));
+        var detail = recipe?.Detalles.FirstOrDefault(item => item.Id == detalleId);
+        if (recipe is null || detail is null)
         {
-            _gate.Release();
+            return false;
         }
+
+        _db.DetallesReceta.Remove(detail);
+        if (recipe.Detalles.Count == 1)
+        {
+            _db.Recetas.Remove(recipe);
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> SaveExamOrderAsync(int consultationId, ExamOrderViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.Ordenes)
+            .ThenInclude(order => order.Detalles)
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
+            return false;
+        }
+
+        if (model.DetalleOrdenId.HasValue)
+        {
+            var detail = consultation.Ordenes
+                .SelectMany(order => order.Detalles)
+                .FirstOrDefault(item => item.Id == model.DetalleOrdenId.Value);
+            if (detail is null)
             {
                 return false;
             }
 
-            if (model.DetalleOrdenId.HasValue)
+            detail.Nombre = model.Nombre.Trim();
+            detail.Indicaciones = model.Indicaciones?.Trim() ?? string.Empty;
+        }
+        else
+        {
+            var order = consultation.Ordenes.FirstOrDefault();
+            if (order is null)
             {
-                var existente = consultation.Ordenes
-                    .SelectMany(o => o.Detalles)
-                    .FirstOrDefault(d => d.Id == model.DetalleOrdenId.Value);
-                if (existente is null)
+                order = new Orden
                 {
-                    return false;
-                }
-
-                existente.Nombre = model.Nombre.Trim();
-                existente.Indicaciones = string.IsNullOrWhiteSpace(model.Indicaciones) ? string.Empty : model.Indicaciones.Trim();
-                await WriteAsync(data);
-                return true;
-            }
-
-            var orden = consultation.Ordenes.FirstOrDefault();
-            if (orden is null)
-            {
-                orden = new OrdenRecord
-                {
-                    Id = NextId(data, d => d.Patients
-                        .SelectMany(p => p.Consultations)
-                        .SelectMany(c => c.Ordenes)
-                        .Select(o => o.Id)),
                     ConsultaId = consultation.Id,
                     FechaHoraEmision = DateTime.Now
                 };
-                consultation.Ordenes.Add(orden);
+                consultation.Ordenes.Add(order);
             }
 
-            var nextDetalleId = NextId(data, d => d.Patients
-                .SelectMany(p => p.Consultations)
-                .SelectMany(c => c.Ordenes)
-                .SelectMany(o => o.Detalles)
-                .Select(det => det.Id));
-
-            orden.Detalles.Add(new DetalleOrdenRecord
+            order.Detalles.Add(new DetalleOrden
             {
-                Id = nextDetalleId,
-                IdOrden = orden.Id,
                 Nombre = model.Nombre.Trim(),
-                Indicaciones = string.IsNullOrWhiteSpace(model.Indicaciones) ? string.Empty : model.Indicaciones.Trim()
+                Indicaciones = model.Indicaciones?.Trim() ?? string.Empty
             });
+        }
 
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteExamOrderDetailAsync(int consultationId, int detalleOrdenId)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.Ordenes)
+            .ThenInclude(order => order.Detalles)
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            foreach (var orden in consultation.Ordenes.ToList())
-            {
-                var detalle = orden.Detalles.FirstOrDefault(d => d.Id == detalleOrdenId);
-                if (detalle is not null)
-                {
-                    orden.Detalles.Remove(detalle);
-                    if (orden.Detalles.Count == 0)
-                    {
-                        consultation.Ordenes.Remove(orden);
-                    }
-                    await WriteAsync(data);
-                    return true;
-                }
-            }
-
             return false;
         }
-        finally
+
+        var order = consultation.Ordenes.FirstOrDefault(item =>
+            item.Detalles.Any(detail => detail.Id == detalleOrdenId));
+        var detail = order?.Detalles.FirstOrDefault(item => item.Id == detalleOrdenId);
+        if (order is null || detail is null)
         {
-            _gate.Release();
+            return false;
         }
+
+        _db.DetallesOrden.Remove(detail);
+        if (order.Detalles.Count == 1)
+        {
+            _db.Ordenes.Remove(order);
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> SaveStudyAsync(StudyViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        var patient = await LoadPatientGraph()
+            .FirstOrDefaultAsync(item => item.Consultas.Any(consultation => consultation.Id == model.ConsultationId));
+        var consultation = patient?.Consultas.FirstOrDefault(item => item.Id == model.ConsultationId);
+        if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(model.ConsultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
+            return false;
+        }
+
+        DetalleOrden? orderDetail = null;
+        if (model.IdDetalleOrden.HasValue)
+        {
+            orderDetail = patient.Consultas
+                .Where(item => item.Id != consultation.Id)
+                .SelectMany(item => item.Ordenes)
+                .SelectMany(item => item.Detalles)
+                .FirstOrDefault(item => item.Id == model.IdDetalleOrden.Value);
+            if (orderDetail is null)
             {
                 return false;
             }
-
-            DetalleOrdenRecord? detalleOrden = null;
-            if (model.IdDetalleOrden.HasValue)
-            {
-                detalleOrden = patient.Consultations
-                    .Where(c => c.Id != consultation.Id)
-                    .SelectMany(c => c.Ordenes)
-                    .SelectMany(o => o.Detalles)
-                    .FirstOrDefault(d => d.Id == model.IdDetalleOrden.Value);
-                if (detalleOrden is null)
-                {
-                    return false;
-                }
-            }
-
-            if (model.EstudioId.HasValue)
-            {
-                var existente = patient.Estudios.FirstOrDefault(e =>
-                    e.Id == model.EstudioId.Value && e.IdConsultaLectura == consultation.Id);
-                if (existente is null)
-                {
-                    return false;
-                }
-
-                existente.IdDetalleOrden = detalleOrden?.Id;
-                existente.Nombre = string.IsNullOrWhiteSpace(model.Nombre) ? null : model.Nombre.Trim();
-                existente.Observaciones = model.Observaciones.Trim();
-                existente.Fecha = model.Fecha.Date;
-                await WriteAsync(data);
-                return true;
-            }
-
-            var nextStudyId = NextId(data, d => d.Patients.SelectMany(p => p.Estudios).Select(e => e.Id));
-            patient.Estudios.Add(new EstudioRecord
-            {
-                Id = nextStudyId,
-                IdPaciente = patient.Id,
-                IdDetalleOrden = detalleOrden?.Id,
-                IdConsultaLectura = consultation.Id,
-                Nombre = string.IsNullOrWhiteSpace(model.Nombre) ? null : model.Nombre.Trim(),
-                Observaciones = model.Observaciones.Trim(),
-                Fecha = model.Fecha.Date
-            });
-
-            await WriteAsync(data);
-            return true;
         }
-        finally
+
+        var study = model.EstudioId.HasValue
+            ? patient.Estudios.FirstOrDefault(item =>
+                item.Id == model.EstudioId.Value && item.IdConsultaLectura == consultation.Id)
+            : null;
+        if (model.EstudioId.HasValue && study is null)
         {
-            _gate.Release();
+            return false;
         }
+
+        if (study is null)
+        {
+            study = new Estudio
+            {
+                IdPaciente = patient.Id,
+                IdConsultaLectura = consultation.Id
+            };
+            patient.Estudios.Add(study);
+        }
+
+        study.IdDetalleOrden = orderDetail?.Id;
+        study.Nombre = string.IsNullOrWhiteSpace(model.Nombre) ? null : model.Nombre.Trim();
+        study.Observaciones = model.Observaciones.Trim();
+        study.Fecha = model.Fecha.Date;
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteStudyAsync(int consultationId, int estudioId)
     {
-        await _gate.WaitAsync();
-        try
+        var study = await _db.Estudios
+            .Include(item => item.ConsultaLectura)
+            .FirstOrDefaultAsync(item => item.Id == estudioId && item.IdConsultaLectura == consultationId);
+        if (study is null || study.ConsultaLectura.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            var estudio = patient.Estudios.FirstOrDefault(e =>
-                e.Id == estudioId && e.IdConsultaLectura == consultation.Id);
-            if (estudio is null)
-            {
-                return false;
-            }
-
-            patient.Estudios.Remove(estudio);
-            await WriteAsync(data);
-            return true;
+            return false;
         }
-        finally
-        {
-            _gate.Release();
-        }
+
+        _db.Estudios.Remove(study);
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> AddIncapacityAsync(int consultationId, IncapacityViewModel model)
     {
-        await _gate.WaitAsync();
-        try
+        var consultation = await _db.Consultas
+            .Include(item => item.Incapacidad)
+            .FirstOrDefaultAsync(item => item.Id == consultationId);
+        if (consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            var existingId = consultation.Incapacidad?.Id;
-            var nextId = existingId ?? NextId(data, d => d.Patients
-                .SelectMany(p => p.Consultations)
-                .Where(c => c.Incapacidad is not null)
-                .Select(c => c.Incapacidad!.Id));
-
-            consultation.Incapacidad = new IncapacidadRecord
-            {
-                Id = nextId,
-                IdConsulta = consultation.Id,
-                FechaInicio = model.FechaInicio.Date,
-                FechaFin = model.FechaFin.Date,
-                Motivo = model.Motivo.Trim()
-            };
-            await WriteAsync(data);
-            return true;
+            return false;
         }
-        finally
-        {
-            _gate.Release();
-        }
+
+        consultation.Incapacidad ??= new Incapacidad { IdConsulta = consultation.Id };
+        consultation.Incapacidad.FechaInicio = model.FechaInicio.Date;
+        consultation.Incapacidad.FechaFin = model.FechaFin.Date;
+        consultation.Incapacidad.Motivo = model.Motivo.Trim();
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteIncapacityAsync(int consultationId)
     {
-        await _gate.WaitAsync();
-        try
+        var incapacity = await _db.Incapacidades
+            .Include(item => item.Consulta)
+            .FirstOrDefaultAsync(item => item.IdConsulta == consultationId);
+        if (incapacity is null || incapacity.Consulta.Estado != EstadoConsulta.EnAtencion)
         {
-            var (data, patient, consultation) = await FindConsultationAsync(consultationId);
-            if (patient is null || consultation is null || consultation.Estado != EstadoConsulta.EnAtencion)
-            {
-                return false;
-            }
-
-            if (consultation.Incapacidad is null)
-            {
-                return false;
-            }
-
-            consultation.Incapacidad = null;
-            await WriteAsync(data);
-            return true;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    private async Task<(ClinicData Data, PatientRecord? Patient, ConsultationRecord? Consultation)> FindConsultationAsync(
-        int consultationId)
-    {
-        var data = await ReadAsync();
-        var found = FindConsultation(data, consultationId);
-        return (data, found.Patient, found.Consultation);
-    }
-
-    private static (PatientRecord? Patient, ConsultationRecord? Consultation) FindConsultation(
-        ClinicData data,
-        int consultationId)
-    {
-        foreach (var patient in data.Patients)
-        {
-            var consultation = patient.Consultations.FirstOrDefault(item => item.Id == consultationId);
-            if (consultation is not null)
-            {
-                return (patient, consultation);
-            }
+            return false;
         }
 
-        return (null, null);
+        _db.Incapacidades.Remove(incapacity);
+        await _db.SaveChangesAsync();
+        return true;
     }
+
+    private IQueryable<Paciente> LoadPatientGraph() =>
+        _db.Pacientes
+            .AsSplitQuery()
+            .Include(patient => patient.Alergias)
+            .Include(patient => patient.Enfermedades)
+            .Include(patient => patient.Consultas)
+                .ThenInclude(consultation => consultation.SignosVitales)
+            .Include(patient => patient.Consultas)
+                .ThenInclude(consultation => consultation.Incapacidad)
+            .Include(patient => patient.Consultas)
+                .ThenInclude(consultation => consultation.Recetas)
+                    .ThenInclude(recipe => recipe.Detalles)
+                        .ThenInclude(detail => detail.Medicamento)
+            .Include(patient => patient.Consultas)
+                .ThenInclude(consultation => consultation.Ordenes)
+                    .ThenInclude(order => order.Detalles)
+            .Include(patient => patient.Estudios);
 
     private static ConsultationPageData BuildConsultationPage(
         PatientRecord patient,
@@ -917,79 +593,103 @@ public sealed class ClinicDataStore
     private static PatientListItem ToListItem(PatientRecord patient) =>
         new(patient.Id, patient.Nombre, patient.FechaNacimiento, patient.Dui);
 
-    private static int NextId(ClinicData data, Func<ClinicData, IEnumerable<int>> ids) =>
-        ids(data).DefaultIfEmpty(0).Max() + 1;
-
-    private async Task<ClinicData> ReadAsync()
-    {
-        ClinicData data;
-        if (!File.Exists(_filePath))
+    private static PatientRecord ToPatientRecord(Paciente patient) =>
+        new()
         {
-            data = new ClinicData();
-        }
-        else
-        {
-            await using var stream = new FileStream(
-                _filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                bufferSize: 4096,
-                useAsync: true);
-            data = await JsonSerializer.DeserializeAsync<ClinicData>(stream, JsonOptions)
-                ?? new ClinicData();
-        }
-
-        if (data.Medicamentos.Count == 0)
-        {
-            var id = 1;
-            foreach (var med in DefaultMedications)
+            Id = patient.Id,
+            Nombre = patient.Nombre,
+            FechaNacimiento = patient.FechaNacimiento,
+            Dui = patient.Dui,
+            Alergias = patient.Alergias.Select(item => new AlergiaRecord
             {
-                data.Medicamentos.Add(new MedicamentoRecord { Id = id++, Nombre = med });
-            }
-            await WriteAsync(data);
-        }
-
-        return data;
-    }
-
-    private async Task WriteAsync(ClinicData data)
-    {
-        var directory = Path.GetDirectoryName(_filePath)
-            ?? throw new InvalidOperationException("No se pudo resolver la carpeta de datos clínicos.");
-        Directory.CreateDirectory(directory);
-
-        var temporaryFile = $"{_filePath}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            await using (var stream = new FileStream(
-                temporaryFile,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 4096,
-                useAsync: true))
+                Id = item.Id,
+                IdPaciente = item.IdPaciente,
+                TipoAlergia = item.TipoAlergia,
+                SustanciaElemento = item.SustanciaElemento,
+                Severidad = item.Severidad
+            }).ToList(),
+            Enfermedades = patient.Enfermedades.Select(item => new EnfermedadRecord
             {
-                await JsonSerializer.SerializeAsync(stream, data, JsonOptions);
-                await stream.FlushAsync();
-            }
-
-            File.Move(temporaryFile, _filePath, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(temporaryFile))
+                Id = item.Id,
+                IdPaciente = item.IdPaciente,
+                Nombre = item.Nombre,
+                AnioDiagnostico = item.AnioDiagnostico
+            }).ToList(),
+            Consultations = patient.Consultas.Select(ToConsultationRecord).ToList(),
+            Estudios = patient.Estudios.Select(item => new EstudioRecord
             {
-                File.Delete(temporaryFile);
-            }
-        }
-    }
+                Id = item.Id,
+                IdPaciente = item.IdPaciente,
+                IdDetalleOrden = item.IdDetalleOrden,
+                IdConsultaLectura = item.IdConsultaLectura,
+                Nombre = item.Nombre,
+                Observaciones = item.Observaciones,
+                Fecha = item.Fecha
+            }).ToList()
+        };
 
-    private sealed class ClinicData
-    {
-        public List<PatientRecord> Patients { get; set; } = [];
-        public List<MedicamentoRecord> Medicamentos { get; set; } = [];
-    }
+    private static ConsultationRecord ToConsultationRecord(Consulta consultation) =>
+        new()
+        {
+            Id = consultation.Id,
+            IdPaciente = consultation.IdPaciente,
+            FechaHoraInicio = consultation.FechaHoraInicio,
+            FechaHoraFinalizacion = consultation.FechaHoraFinalizacion,
+            Motivo = consultation.Motivo,
+            ExamenFisico = consultation.ExamenFisico,
+            Diagnostico = consultation.Diagnostico,
+            Prioridad = consultation.Prioridad,
+            Estado = consultation.Estado,
+            SignosVitales = consultation.SignosVitales is null ? null : new SignosVitalesRecord
+            {
+                Id = consultation.SignosVitales.Id,
+                IdConsulta = consultation.SignosVitales.IdConsulta,
+                Peso = consultation.SignosVitales.Peso,
+                Altura = consultation.SignosVitales.Altura,
+                Temperatura = consultation.SignosVitales.Temperatura,
+                PresionSistolica = consultation.SignosVitales.PresionSistolica,
+                PresionDiastolica = consultation.SignosVitales.PresionDiastolica,
+                RitmoCardiaco = consultation.SignosVitales.RitmoCardiaco,
+                ConcentracionOxigeno = consultation.SignosVitales.ConcentracionOxigeno
+            },
+            Recetas = consultation.Recetas.Select(recipe => new RecetaRecord
+            {
+                Id = recipe.Id,
+                IdConsulta = recipe.IdConsulta,
+                Detalles = recipe.Detalles.Select(detail => new DetalleRecetaRecord
+                {
+                    Id = detail.Id,
+                    IdReceta = detail.IdReceta,
+                    IdMedicamento = detail.IdMedicamento,
+                    NombreMedicamento = detail.Medicamento?.Nombre ?? "Medicamento no disponible",
+                    Dosis = detail.Dosis,
+                    Frecuencia = detail.Frecuencia,
+                    Duracion = detail.Duracion,
+                    Indicaciones = detail.Indicaciones
+                }).ToList()
+            }).ToList(),
+            Incapacidad = consultation.Incapacidad is null ? null : new IncapacidadRecord
+            {
+                Id = consultation.Incapacidad.Id,
+                IdConsulta = consultation.Incapacidad.IdConsulta,
+                FechaInicio = consultation.Incapacidad.FechaInicio,
+                FechaFin = consultation.Incapacidad.FechaFin,
+                Motivo = consultation.Incapacidad.Motivo
+            },
+            Ordenes = consultation.Ordenes.Select(order => new OrdenRecord
+            {
+                Id = order.Id,
+                ConsultaId = order.ConsultaId,
+                FechaHoraEmision = order.FechaHoraEmision,
+                Detalles = order.Detalles.Select(detail => new DetalleOrdenRecord
+                {
+                    Id = detail.Id,
+                    IdOrden = detail.IdOrden,
+                    Nombre = detail.Nombre,
+                    Indicaciones = detail.Indicaciones
+                }).ToList()
+            }).ToList()
+        };
 
     // Tabla: pacientes
     public sealed class PatientRecord
