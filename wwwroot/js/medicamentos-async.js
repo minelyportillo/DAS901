@@ -3,7 +3,7 @@
   if (!tablaBody) return;
 
   try {
-    const respuesta = await fetch("/api/MedicamentosApi", {
+    const respuesta = await fetch("/api/medicamentos", {
       method: "GET",
       headers: { Accept: "application/json" }
     });
