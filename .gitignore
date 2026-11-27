@@ -21,5 +21,12 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Local credentials and clinical data
+/App_Data/users.json
+/App_Data/clinic-data.json
+appsettings.Production.json
+.env
+.env.*
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt

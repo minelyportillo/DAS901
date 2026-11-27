@@ -1,0 +1,29 @@
+@baseUrl = https://localhost:7239
+@email = correo-de-usuario
+@password = contraseña-de-usuario
+@token = pega-aqui-el-accessToken
+
+### Obtener un JWT
+POST {{baseUrl}}/api/auth/token
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Listar pacientes autenticado
+GET {{baseUrl}}/api/pacientes
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Crear paciente (requiere JWT con rol Doctora o Secretaria)
+POST {{baseUrl}}/api/pacientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Paciente de prueba",
+  "fechaNacimiento": "1990-01-15",
+  "dui": null
+}

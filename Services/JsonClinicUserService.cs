@@ -86,13 +86,16 @@ public sealed class JsonClinicUserService : IClinicUserService
         }
     }
 
-    public async Task<ClinicUserSummary?> AuthenticateAsync(string email, string password)
+    public async Task<ClinicUserSummary?> AuthenticateAsync(
+        string email,
+        string password,
+        CancellationToken cancellationToken = default)
     {
-        await _fileLock.WaitAsync();
+        await _fileLock.WaitAsync(cancellationToken);
         try
         {
             var normalizedEmail = NormalizeEmail(email);
-            var users = await ReadUsersAsync();
+            var users = await ReadUsersAsync(cancellationToken);
             var user = users.FirstOrDefault(candidate => candidate.NormalizedEmail == normalizedEmail);
             if (user is null)
             {
@@ -108,7 +111,7 @@ public sealed class JsonClinicUserService : IClinicUserService
             if (verification == PasswordVerificationResult.SuccessRehashNeeded)
             {
                 user.PasswordHash = _passwordHasher.HashPassword(user, password);
-                await WriteUsersAsync(users);
+                await WriteUsersAsync(users, cancellationToken);
             }
 
             return ToSummary(user);
@@ -201,7 +204,7 @@ public sealed class JsonClinicUserService : IClinicUserService
         }
     }
 
-    private async Task<List<ClinicUser>> ReadUsersAsync()
+    private async Task<List<ClinicUser>> ReadUsersAsync(CancellationToken cancellationToken = default)
     {
         await using var stream = new FileStream(
             _usersFilePath,
@@ -211,11 +214,13 @@ public sealed class JsonClinicUserService : IClinicUserService
             bufferSize: 4096,
             useAsync: true);
 
-        return await JsonSerializer.DeserializeAsync<List<ClinicUser>>(stream, JsonOptions)
+        return await JsonSerializer.DeserializeAsync<List<ClinicUser>>(stream, JsonOptions, cancellationToken)
             ?? throw new InvalidDataException("El archivo local de usuarios no contiene una lista válida.");
     }
 
-    private async Task WriteUsersAsync(List<ClinicUser> users)
+    private async Task WriteUsersAsync(
+        List<ClinicUser> users,
+        CancellationToken cancellationToken = default)
     {
         var directory = Path.GetDirectoryName(_usersFilePath)
             ?? throw new InvalidOperationException("No se pudo resolver la carpeta local de usuarios.");
@@ -232,8 +237,8 @@ public sealed class JsonClinicUserService : IClinicUserService
                 bufferSize: 4096,
                 useAsync: true))
             {
-                await JsonSerializer.SerializeAsync(stream, users, JsonOptions);
-                await stream.FlushAsync();
+                await JsonSerializer.SerializeAsync(stream, users, JsonOptions, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
             }
 
             File.Move(temporaryFile, _usersFilePath, overwrite: true);
