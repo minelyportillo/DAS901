@@ -23,14 +23,17 @@
     <button class="btn btn-primary" type="submit">Buscar</button>
 </form>
 
+<p id="patient-search-status" class="visually-hidden" role="status" aria-live="polite"></p>
+
 <div class="section-heading">
     <div>
         <h2>Pacientes</h2>
-        <p>@Model.Patients.Count resultado(s)</p>
+        <p id="patient-result-count">@Model.Patients.Count resultado(s)</p>
     </div>
 </div>
 
-<section class="users-card">
+<section class="users-card" id="patient-results"
+         data-can-manage="@User.IsInRole("Secretaria").ToString().ToLowerInvariant()">
     @if (Model.Patients.Count == 0)
     {
         <div class="empty-state">
@@ -71,3 +74,165 @@
         </div>
     }
 </section>
+
+<div hidden>
+    <form id="patient-antiforgery-token">@Html.AntiForgeryToken()</form>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.querySelector(".patient-search-form");
+            const results = document.querySelector("#patient-results");
+            const resultCount = document.querySelector("#patient-result-count");
+            const status = document.querySelector("#patient-search-status");
+            const token = document.querySelector("#patient-antiforgery-token input[name='__RequestVerificationToken']").value;
+            const canManage = results.dataset.canManage === "true";
+
+            function addHiddenField(formElement, name, value) {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = name;
+                input.value = value;
+                formElement.append(input);
+            }
+
+            function createPostForm(action, fields, label, buttonClass, confirmation) {
+                const postForm = document.createElement("form");
+                postForm.method = "post";
+                postForm.action = action;
+                addHiddenField(postForm, "__RequestVerificationToken", token);
+                for (const [name, value] of Object.entries(fields)) {
+                    addHiddenField(postForm, name, value);
+                }
+
+                if (confirmation) {
+                    postForm.addEventListener("submit", event => {
+                        if (!window.confirm(confirmation)) {
+                            event.preventDefault();
+                        }
+                    });
+                }
+
+                const button = document.createElement("button");
+                button.className = buttonClass;
+                button.type = "submit";
+                button.textContent = label;
+                postForm.append(button);
+                return postForm;
+            }
+
+            function renderPatients(patients) {
+                results.replaceChildren();
+                resultCount.textContent = `${patients.length} resultado(s)`;
+
+                if (patients.length === 0) {
+                    const emptyState = document.createElement("div");
+                    emptyState.className = "empty-state";
+                    const heading = document.createElement("h2");
+                    heading.textContent = "No se encontraron pacientes";
+                    const message = document.createElement("p");
+                    message.textContent = canManage
+                        ? "Prueba con otro nombre o DUI. También puedes registrar un expediente nuevo."
+                        : "Prueba con otro nombre o DUI.";
+                    emptyState.append(heading, message);
+                    if (canManage) {
+                        const registerLink = document.createElement("a");
+                        registerLink.className = "btn btn-primary";
+                        registerLink.href = "/Pacientes/Registrar";
+                        registerLink.textContent = "Registrar paciente";
+                        emptyState.append(registerLink);
+                    }
+                    results.append(emptyState);
+                    return;
+                }
+
+                const list = document.createElement("div");
+                list.className = "users-list";
+                for (const patient of patients) {
+                    const row = document.createElement("article");
+                    row.className = "user-row patient-row";
+
+                    const avatar = document.createElement("span");
+                    avatar.className = "user-avatar";
+                    avatar.setAttribute("aria-hidden", "true");
+                    avatar.textContent = patient.nombre.slice(0, 1).toLocaleUpperCase();
+
+                    const details = document.createElement("div");
+                    details.className = "user-details";
+                    const name = document.createElement("strong");
+                    name.textContent = patient.nombre;
+                    const information = document.createElement("span");
+                    const birthDate = patient.fechaNacimiento.slice(0, 10).split("-").reverse().join("/");
+                    information.textContent = `DUI: ${patient.dui || "No registrado"} · ${patient.edad} años · Nac.: ${birthDate}`;
+                    details.append(name, information);
+
+                    const chartLink = document.createElement("a");
+                    chartLink.className = "btn btn-light-blue btn-sm";
+                    chartLink.href = `/Pacientes/Expediente/${patient.id}`;
+                    chartLink.textContent = "Ver expediente";
+
+                    row.append(avatar, details, chartLink);
+                    if (canManage) {
+                        const editLink = document.createElement("a");
+                        editLink.className = "btn btn-outline-secondary btn-sm";
+                        editLink.href = `/Pacientes/Editar/${patient.id}`;
+                        editLink.textContent = "Editar";
+                        row.append(
+                            editLink,
+                            createPostForm(
+                                `/Pacientes/Eliminar/${patient.id}`,
+                                {},
+                                "Eliminar",
+                                "btn btn-outline-danger btn-sm",
+                                "¿Eliminar este paciente? Solo se permite si no tiene historial clínico."),
+                            createPostForm(
+                                "/SalaEspera/RegistrarLlegada",
+                                { pacienteId: patient.id },
+                                "Registrar llegada",
+                                "btn btn-primary btn-sm"));
+                    }
+
+                    list.append(row);
+                }
+
+                results.append(list);
+            }
+
+            form.addEventListener("submit", async event => {
+                event.preventDefault();
+                const submitButton = form.querySelector("button[type='submit']");
+                const term = form.querySelector("#termino").value.trim();
+                const query = new URLSearchParams();
+                if (term) {
+                    query.set("termino", term);
+                }
+
+                submitButton.disabled = true;
+                status.textContent = "Buscando pacientes...";
+                try {
+                    const response = await fetch(`/api/pacientes?${query}`, {
+                        headers: { Accept: "application/json" },
+                        credentials: "same-origin"
+                    });
+                    if (!response.ok) {
+                        throw new Error(
+                            response.status === 401 || response.status === 403
+                                ? "Tu sesión no tiene permiso para buscar pacientes."
+                                : "El servicio de búsqueda no está disponible.");
+                    }
+
+                    const patients = await response.json();
+                    renderPatients(patients);
+                    status.textContent = `Se encontraron ${patients.length} paciente(s).`;
+                } catch (error) {
+                    status.textContent = error instanceof Error
+                        ? error.message
+                        : "No se pudo completar la búsqueda. Intenta de nuevo.";
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

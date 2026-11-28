@@ -5,6 +5,24 @@ namespace ClinicaApp.DTOs;
 
 public sealed record ApiMessageResponse(string Mensaje);
 
+/// <summary>Credenciales para obtener un token de acceso a la API.</summary>
+public sealed record ApiTokenRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public required string Email { get; init; }
+
+    [Required]
+    [StringLength(256)]
+    public required string Password { get; init; }
+}
+
+/// <summary>Token Bearer y tiempo de expiración para autenticar solicitudes API.</summary>
+public sealed record ApiTokenResponseDto(
+    string AccessToken,
+    string TokenType,
+    int ExpiresIn);
+
 public sealed class PacienteRequestDto
 {
     [Required(ErrorMessage = "El nombre del paciente es obligatorio.")]

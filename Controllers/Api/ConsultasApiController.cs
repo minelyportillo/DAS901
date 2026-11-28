@@ -55,6 +55,7 @@ public sealed class ConsultasApiController(
     /// Registra la llegada de un paciente a la sala de espera creando una nueva consulta activa.
     /// </summary>
     [HttpPost("llegada/{pacienteId:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ConsultationPageData), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ConsultationPageData>> RegisterArrival(int pacienteId)
@@ -78,6 +79,7 @@ public sealed class ConsultasApiController(
     /// Actualiza la prioridad de atención de una consulta en sala de espera.
     /// </summary>
     [HttpPut("{id:int}/prioridad")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -111,6 +113,7 @@ public sealed class ConsultasApiController(
     /// Registra o actualiza los signos vitales iniciales de triaje (peso, altura, temperatura).
     /// </summary>
     [HttpPut("{id:int}/triaje")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiMessageResponse>> SaveTriage(int id, [FromBody] TriajeRequestDto request)
@@ -140,6 +143,7 @@ public sealed class ConsultasApiController(
     /// Finaliza una consulta médica que se encuentra en atención.
     /// </summary>
     [HttpDelete("{id:int}/cerrar")]
+    [Authorize(Policy = "ApiBearer")]
     [Authorize(Roles = "Doctora")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

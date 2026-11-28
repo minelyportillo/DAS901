@@ -53,6 +53,7 @@ public sealed class MedicamentosApiController(
     /// Registra un nuevo medicamento en el catálogo.
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = "ApiBearer")]
     [Authorize(Roles = "Doctora")]
     [ProducesResponseType(typeof(MedicationOption), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -68,6 +69,7 @@ public sealed class MedicamentosApiController(
     /// Actualiza el nombre de un medicamento del catálogo.
     /// </summary>
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [Authorize(Roles = "Doctora")]
     [ProducesResponseType(typeof(MedicationOption), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -104,6 +106,7 @@ public sealed class MedicamentosApiController(
     /// Elimina un medicamento del catálogo si aún no ha sido prescrito en ninguna receta.
     /// </summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [Authorize(Roles = "Doctora")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

@@ -63,7 +63,7 @@ public sealed class PacientesApiController(
     /// Registra un nuevo paciente en la base de datos.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Secretaria,Doctora")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(PacienteResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -106,7 +106,7 @@ public sealed class PacientesApiController(
     /// Actualiza los datos personales de un paciente existente.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Secretaria,Doctora")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(PacienteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -160,7 +160,7 @@ public sealed class PacientesApiController(
     /// Elimina un paciente únicamente si no posee historial clínico asociado.
     /// </summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Secretaria,Doctora")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -194,6 +194,7 @@ public sealed class PacientesApiController(
     /// Registra una alergia en el expediente del paciente.
     /// </summary>
     [HttpPost("{id:int}/alergias")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiMessageResponse>> AddAllergy(int id, [FromBody] AlergiaRequestDto request)
@@ -223,6 +224,7 @@ public sealed class PacientesApiController(
     /// Actualiza una alergia existente del paciente.
     /// </summary>
     [HttpPut("{id:int}/alergias/{alergiaId:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiMessageResponse>> UpdateAllergy(int id, int alergiaId, [FromBody] AlergiaRequestDto request)
@@ -253,6 +255,7 @@ public sealed class PacientesApiController(
     /// Elimina una alergia del expediente del paciente.
     /// </summary>
     [HttpDelete("{id:int}/alergias/{alergiaId:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAllergy(int id, int alergiaId)
@@ -274,6 +277,7 @@ public sealed class PacientesApiController(
     /// Registra una enfermedad crónica o antecedente patológico para el paciente.
     /// </summary>
     [HttpPost("{id:int}/enfermedades")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiMessageResponse>> AddDisease(int id, [FromBody] EnfermedadRequestDto request)
@@ -302,6 +306,7 @@ public sealed class PacientesApiController(
     /// Actualiza una enfermedad registrada del paciente.
     /// </summary>
     [HttpPut("{id:int}/enfermedades/{enfermedadId:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(typeof(ApiMessageResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiMessageResponse>> UpdateDisease(int id, int enfermedadId, [FromBody] EnfermedadRequestDto request)
@@ -331,6 +336,7 @@ public sealed class PacientesApiController(
     /// Elimina una enfermedad registrada del expediente del paciente.
     /// </summary>
     [HttpDelete("{id:int}/enfermedades/{enfermedadId:int}")]
+    [Authorize(Policy = "ApiBearer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteDisease(int id, int enfermedadId)
