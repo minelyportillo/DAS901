@@ -36,13 +36,20 @@ public sealed class ConsultationAnalysisService(ClinicaDbContext db) : IConsulta
         var total = await consultations.CountAsync(cancellationToken);
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
         var page = totalPages == 0 ? 1 : Math.Min(requestedPage, totalPages);
-        var states = await consultations
+        var rawStates = await consultations
             .GroupBy(consultation => consultation.Estado)
-            .Select(group => new ConsultationGroupRow(group.Key.ToString(), group.Count()))
-            .OrderByDescending(group => group.Cantidad)
+            .Select(group => new
+            {
+                State = group.Key,
+                Count = group.Count()
+            })
+            .OrderByDescending(group => group.Count)
             .ToListAsync(cancellationToken);
+        var states = rawStates
+            .Select(group => new ConsultationGroupRow(group.State.ToString(), group.Count))
+            .ToList();
 
-        var byDay = await consultations
+        var rawByDay = await consultations
             .GroupBy(consultation => consultation.FechaHoraInicio.Date)
             .Select(group => new
             {
@@ -50,22 +57,31 @@ public sealed class ConsultationAnalysisService(ClinicaDbContext db) : IConsulta
                 Count = group.Count()
             })
             .OrderBy(group => group.Date)
+            .ToListAsync(cancellationToken);
+        var byDay = rawByDay
             .Select(group => new ConsultationGroupRow(
                 group.Date.ToString("yyyy-MM-dd"),
                 group.Count))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
-        var frequentDiagnoses = await consultations
+        var rawDiagnoses = await consultations
             .Where(consultation => consultation.Diagnostico != null
                 && consultation.Diagnostico != string.Empty)
             .GroupBy(consultation => consultation.Diagnostico!)
-            .Select(group => new ConsultationGroupRow(group.Key, group.Count()))
-            .OrderByDescending(group => group.Cantidad)
-            .ThenBy(group => group.Etiqueta)
+            .Select(group => new
+            {
+                Diagnosis = group.Key,
+                Count = group.Count()
+            })
+            .OrderByDescending(group => group.Count)
+            .ThenBy(group => group.Diagnosis)
             .Take(5)
             .ToListAsync(cancellationToken);
+        var frequentDiagnoses = rawDiagnoses
+            .Select(group => new ConsultationGroupRow(group.Diagnosis, group.Count))
+            .ToList();
 
-        var frequentMedications = await db.DetallesReceta
+        var rawMedications = await db.DetallesReceta
             .AsNoTracking()
             .Where(detail => detail.Receta.Consulta.FechaHoraInicio >= from
                 && detail.Receta.Consulta.FechaHoraInicio < untilExclusive
@@ -74,11 +90,18 @@ public sealed class ConsultationAnalysisService(ClinicaDbContext db) : IConsulta
             .GroupBy(detail => detail.Medicamento == null
                 ? "Medicamento no disponible"
                 : detail.Medicamento.Nombre)
-            .Select(group => new ConsultationGroupRow(group.Key, group.Count()))
-            .OrderByDescending(group => group.Cantidad)
-            .ThenBy(group => group.Etiqueta)
+            .Select(group => new
+            {
+                Medication = group.Key,
+                Count = group.Count()
+            })
+            .OrderByDescending(group => group.Count)
+            .ThenBy(group => group.Medication)
             .Take(5)
             .ToListAsync(cancellationToken);
+        var frequentMedications = rawMedications
+            .Select(group => new ConsultationGroupRow(group.Medication, group.Count))
+            .ToList();
 
         var averageDuration = await consultations
             .Where(consultation => consultation.FechaHoraFinalizacion.HasValue)
