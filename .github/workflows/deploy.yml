@@ -1,18 +1,33 @@
-name: Desplegar en IIS Local
+name: Compilar y Publicar Paquete IIS (Produccion)
 
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    runs-on: self-hosted
+  build-and-publish-iis:
+    runs-on: windows-latest
     steps:
-      - name: Descargar código
+      - name: Descargar codigo del repositorio
         uses: actions/checkout@v4
 
-      - name: Compilar proyecto .NET
-        run: dotnet publish -c Release -o ./publish
+      - name: Configurar .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
 
-      - name: Copiar archivos compilados a IIS
-        run: xcopy /E /I /Y ".\publish\*" "C:\inetpub\wwwroot\DAS901"
+      - name: Restaurar dependencias NuGet
+        run: dotnet restore .\ClinicaApp.csproj
+
+      - name: Compilar en modo Release
+        run: dotnet build .\ClinicaApp.csproj --configuration Release --no-restore
+
+      - name: Publicar paquete para IIS (dotnet publish)
+        run: dotnet publish .\ClinicaApp.csproj --configuration Release --output .\publish --no-build
+
+      - name: Publicar artefacto listo para IIS (ClinicaApp-IIS-Deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClinicaApp-IIS-Release
+          path: .\publish
